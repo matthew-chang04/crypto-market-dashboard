@@ -11,9 +11,9 @@ public:
 	void connect();
 	void run();
 
-private:
+protected:
 	virtual void on_message(const std::string& msg) = 0;
-	virtual void subscribe() = 0;
+	virtual uint64_t subscribe() = 0;
 
 	std::string uri_;
 };
