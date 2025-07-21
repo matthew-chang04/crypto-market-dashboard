@@ -10,13 +10,15 @@ class BinanceClient : public WebSocketClient
 {
 public:
 	BinanceClient(std::string symbol) {};
+	void connect() override;
+	void subscribe(const std::string& target) override;
+	void run();
 
 protected:
-	void onMessage(const std::string& msg) override;
-	uint64_t subscribe() override;
-	void getOrderBookSnapshot() {}
+	std::string getOrderBookSnapshot() {}
+	void initOrderbook() {};
 
 private:
-	OrderBook orderbook;
-}
+	OrderBook orderbook_;
+};
 

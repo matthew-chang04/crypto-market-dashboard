@@ -5,16 +5,20 @@ class WebSocketClient
 {
 public:
 	
-	WebSocketClient(std::string& uri) : uri_ {uri} {}
+	WebSocketClient(std::string& host, std::string& port) : host_ {host}, port_{port}, ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv12_client}, resolver_{ioc_}, ws_{ioc_, sslCtx_} {} 
 	virtual ~WebSocketClient() {}
 
-	void connect();
-	void run();
+	void connect() = 0;
+	void subscribe(const std::string& target);
+	void run() = 0;
 
 protected:
-	virtual void on_message(const std::string& msg) = 0;
-	virtual uint64_t subscribe() = 0;
+	std::string host_;
+	std::string port_;
 
-	std::string uri_;
+	boost::asio::io_context ioc_;
+	boost::asio::ssl::context sslCtx_;
+	tcp::resolver resolver_;
+	websocket::stream::<ssl::stream<tcp::socket>> ws_;
 };
 

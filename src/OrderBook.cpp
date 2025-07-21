@@ -5,7 +5,7 @@ using nlohmann::json = json;
 
 OrderBook::OrderBook() : lastUpdateID{}, bids{}, asks{} {}
 
-OrderBook::populateSnapshot(const std::string& response)
+void OrderBook::populateSnapshot(const std::string& response)
 {
 	json orderData json::parse(response);
 	lastUpdateID = orderData["lastUpdateID"];
@@ -18,7 +18,7 @@ OrderBook::populateSnapshot(const std::string& response)
 	}
 }
 
-OrderBook::update(const std::string& jsonUpdate)
+void OrderBook::update(const std::string& jsonUpdate)
 {
 	json updateData = json::parse(jsonUpdate);
 	lastUpdateID = updateData["u"];
@@ -31,4 +31,4 @@ OrderBook::update(const std::string& jsonUpdate)
 		}
 	}
 }
-:
+
