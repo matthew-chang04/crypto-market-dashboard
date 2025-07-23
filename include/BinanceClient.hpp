@@ -4,7 +4,6 @@
 #include <string>
 #include <websocketpp/client.hpp>
 #include "WebSocketClient.hpp"
-#include "OrderBook.hpp"
 
 class BinanceClient : public WebSocketClient
 {
@@ -12,7 +11,7 @@ public:
 	BinanceClient() {};
 	void connect() override;
 	void subscribe(const std::string& target) override;
-	void run();
+	void run() override;
 
 protected:
 	std::string getOrderBookSnapshot() {}
