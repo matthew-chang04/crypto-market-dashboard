@@ -23,7 +23,10 @@ using tcp = boost::asio::ip::tcp;
 //TODO: SEE about adding enums to standardize names for coins (ie BTC, ETH, SOL)
 // THIS WILL allow us to send in specific symbols. probably worth implementing some enum in the WebSocketClient Class, and passing symbol from there...
 
-BinanceClient::BinanceClient(std::string symbol) : WebSocketClient(HOST, PORT) {}
+BinanceClient::BinanceClient() : WebSocketClient(HOST, PORT), orderbook{}, orderBuffer{} 
+{
+	
+}
 
 void connect()
 {
@@ -89,8 +92,3 @@ std::string BinanceClient::getOrderBookSnapshot(const std::string& target)
 	}	
 }
 
-void initOrderbook()
-{
-	// LOGIC: must implement a message handle function that stores stream info in a buffer that is a member std::vector, this will hold the updates while we wait for the right snapshot
-
-}
