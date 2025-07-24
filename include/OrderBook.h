@@ -16,7 +16,6 @@ public:
 	void update(const std::string& jsonUpdate) {}
 	void initOrderBook() {}
 	
-
 private:
 	Exchange ex_;	
 	std::unique_ptr<WebSocketClient> webSocket_;

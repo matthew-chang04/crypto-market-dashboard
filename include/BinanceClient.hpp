@@ -9,6 +9,7 @@ class BinanceClient : public WebSocketClient
 {
 public:
 	BinanceClient() {};
+	std::string handleMessage(std::string payload);
 	void connect() override;
 	void subscribe(const std::string& target) override;
 	void run() override;
@@ -18,6 +19,6 @@ protected:
 	void initOrderbook() {};
 
 private:
-	std::vector<std::string> orderBuffer;
+	std::vector<std::string> buffer;
 };
 

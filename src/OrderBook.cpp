@@ -45,6 +45,12 @@ void OrderBook::initOrderBook()
 	}
 
 	webSocket_->subscribe(target);
+	std::thread stream(webSocket_->run);
 
-	webSocket_->run();
+	
+
+
+
+
+	
 }
