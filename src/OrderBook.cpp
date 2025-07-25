@@ -9,9 +9,8 @@ OrderBook::OrderBook(Exchange ex, std::unique_ptr<WebSocketClient> webSocket) : 
 	webSocket->connect();
 }
 
-void OrderBook::populateSnapshot(const std::string& response)
+void OrderBook::populateSnapshot(const json& orderData)
 {
-	json orderData = json::parse(response);
 	lastUpdateID_ = orderData["lastUpdateID"];
 
 	for (auto& bid : orderData["bids"]) {
@@ -22,16 +21,33 @@ void OrderBook::populateSnapshot(const std::string& response)
 	}
 }
 
-void OrderBook::update(const std::string& jsonUpdate)
-{
-	json updateData = json::parse(jsonUpdate);
-	lastUpdateID_ = updateData["u"];
+void OrderBook::update()
+{	
+	while (true) {
+		if (
+		json updateData = json::parse(jsonUpdate);
 
-	for (auto& bid : updateData["bids"]) {
-		if (!stod(bid[1])) {
-			bids_.erase(stod(bid[0]));
-		} else {
-			bids_[stod(bid[0])] = stod(bid[1]);
+		if (updateData["u"] < lastUpdateID_) {
+			continue;
+		} else if (updateData["U"] > lastUpdateID_) {
+			break;
+			// TODO: Implement logic for restarting the orderbook
+		}
+		lastUpdateID_ = updateData["u"];
+
+		for (auto& bid : updateData["bids"]) {
+			if (!stod(bid[1])) {
+				bids_.erase(stod(bid[0]));
+			} else {
+				bids_[stod(bid[0])] = stod(bid[1]);
+			}
+		}
+		for (auto& ask : updateData["bids"]) {
+			if (!stod(ask[1])) {
+				asks_.erase(stod(ask[0]));
+			} else {
+				asks_[stod(ask[0])] = stod(ask[1]);
+			}
 		}
 	}
 }
@@ -44,13 +60,39 @@ void OrderBook::initOrderBook()
 			target = "btcusdt@depth"
 	}
 
+	// TODO: verify thread logic!!!
 	webSocket_->subscribe(target);
-	std::thread stream(webSocket_->run);
+	std::thread stream(websocket_->run);
 
-	
+	json snapshot = json::parse(getOrderBookSnapshot(target));
+	json update = json::parse(websocket_->readFromBuffer());
 
+	while (snapshot["lastUpdateID"] < update["U"]) {
+		snapshot = json::parse(getOrderBookSnapshot(target));
+	}
 
+	// Updating with the first update
+	if (update["u"] > snapshot["lastUpdateID"]) {
+		lastUpdateID_ = update["u"];
 
-
-	
+		for (auto& bid : update["bids"]) {
+			if (!stod(bid[1])) {
+				bids_.erase(stod(bid[0]));
+			} else {
+				bids_[stod(bid[0])] = stod(bid[1]);
+			}
+		}
+		for (auto& ask : update["asks"]) {
+			if (!stod(ask[1])) {
+				asks_.erase(stod(ask[0]));
+			} else {
+				asks_[stod(ask[0])] = stod(ask[1]);
+			}
+		}
+	}
+	// TODO: verify thread logic!!!
+	this.populateSnapshot(snapshot);
+	std::thread orderParser([this] () {
+		this.update();
+	});
 }

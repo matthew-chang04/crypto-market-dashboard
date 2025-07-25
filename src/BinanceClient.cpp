@@ -28,10 +28,11 @@ BinanceClient::BinanceClient() : WebSocketClient(HOST, PORT), orderbook{}, buffe
 	
 }
 
-std::string handleMessage(std::string payload)
+void BinanceClient::handleMessage(std::string payload)
 {
-	
+	buffer.push(payload);
 }
+
 void connect()
 {
 	auto const results = resolver_.resolve(host_, port_);
@@ -61,12 +62,12 @@ void run()
 		ws_.read(buffer);
 		std::string payload = beast::buffer_to_string(buffer.data());
 		buffer.consume(buffer.size());
-		// IMPLEMENT A FUNCTION THAT TAKES THE PAYLOAD AND DEALS WITH Ig
+		handleMessage(payload);
 	}
 	
 }
 // TODO: Implement some way that data gets passed to here properly (proper target format @BTCUSDT/limit=100
-std::string BinanceClient::getOrderBookSnapshot(const std::string& target)
+static std::string BinanceClient::getOrderBookSnapshot(const std::string& target)
 {
 	try {
 		const std::string API_HOST = "api.binance.com";
@@ -96,3 +97,9 @@ std::string BinanceClient::getOrderBookSnapshot(const std::string& target)
 	}	
 }
 
+std::string BinanceClient::readFromBuffer()
+{
+	std::string payload = buffer.front();
+	buffer.pop();
+	return payload;
+}
