@@ -11,15 +11,18 @@ enum class Exchange
 class OrderBook
 {
 public:
-	OrderBook(Exchange ex, std::unique_ptr<WebSocketClient> websocket) {}	
-	void populateSnapshot(const std::string& response) {}
-	void update(const std::string& jsonUpdate) {}
+	OrderBook(Exchange ex, std::unique_ptr<WebSocketClient> websocket) {}
 	void initOrderBook() {}
+	void stop();
 	
 private:
+	void populateSnapshot(const std::string& response) {}
+	void update(const std::string& jsonUpdate) {}
+
 	Exchange ex_;	
 	std::unique_ptr<WebSocketClient> webSocket_;
 	uint64_t lastUpdateID_;
 	std::map<double, double> bids_;
 	std::map<double, double> asks_;
+	bool stopped_; 
 };

@@ -1,20 +1,9 @@
-
 #include "BinanceClient.hpp"
-#include <boost/beast/core.hpp>
-#include <boost/beast/http.hpp>
-#include <boost/beast/version.hpp>
-#include <boost/asio/connect.hpp>
-#include <boost/asio/ip/tcp.hpp>
-#include <boost/asio/ssl/error.hpp>
-#include <boost/asio/ssl/stream.hpp>
-#include <iostream>
-#include <format>
 
 #define HOST "stream.binance.com"
 #define PORT "9443"
 
 namespace json = nlohmann::json;
-namespace beast = boost::beast;        
 namespace http = beast::http;           
 namespace websocket = beast::websocket; 
 namespace net = boost::asio;           
@@ -51,11 +40,10 @@ void BinanceClient::subscribe(std::string target)
 
 void BinanceClient::read()
 {
-	beast::flat_buffer buffer;
-	ws_.async_read(buffer, [this](beast::error_code, size_t bytes) {
+	ws_.async_read(readDump_, [this](beast::error_code, size_t bytes) {
 		if (!ec) {
-			std::string payload = beast::buffer_to_string(buffer.data());
-			buffer.consume(buffer.size());
+			std::string payload = beast::buffer_to_string(readDump_.data());
+			readDump_.consume(readDump_.size());
 			buffer_.push(payload);
 			read();
 		} else {
@@ -66,10 +54,10 @@ void BinanceClient::read()
 
 void BinanceClient::run()
 {
-	std::thread ioThread([&ioc_]() {
-		ioc_.run();
-	});
 	read();
+	std::thread([this]() {
+		ioc_.run();
+	}).detatch();
 }
 
 std::string BinanceClient::readFromBuffer()
@@ -77,6 +65,14 @@ std::string BinanceClient::readFromBuffer()
 	std::string payload = buffer.front();
 	buffer.pop();
 	return payload;
+}
+
+void BinanceClient::stop()
+{
+	ws_.close();
+	ioc_.stop();
+	readDump_.consume(readDump_.size());
+	buffer_.clear();
 }
 
 // TODO: Implement some way that data gets passed to here properly (proper target format @BTCUSDT/limit=100
