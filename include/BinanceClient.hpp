@@ -9,16 +9,16 @@ class BinanceClient : public WebSocketClient
 {
 public:
 	BinanceClient() {};
-	void handleMessage(std::string payload);
 	void connect() override;
 	void subscribe(const std::string& target) override;
+	void read();
 	void run() override;
-	std::string readFromBuffer();
+	std::string readFromBuffer() const;
 
-protected:
+	// Reads using REST API not WS stream
 	static std::string getOrderBookSnapshot() {}
 
 private:
-	std::queue<std::string> buffer;
+	std::queue<std::string> buffer_;
 };
 

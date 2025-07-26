@@ -23,17 +23,12 @@ using tcp = boost::asio::ip::tcp;
 //TODO: SEE about adding enums to standardize names for coins (ie BTC, ETH, SOL)
 // THIS WILL allow us to send in specific symbols. probably worth implementing some enum in the WebSocketClient Class, and passing symbol from there...
 
-BinanceClient::BinanceClient() : WebSocketClient(HOST, PORT), orderbook{}, buffer{} 
+BinanceClient::BinanceClient() : WebSocketClient(HOST, PORT), buffer_{}
 {
 	
 }
 
-void BinanceClient::handleMessage(std::string payload)
-{
-	buffer.push(payload);
-}
-
-void connect()
+void BinaceClient::connect()
 {
 	auto const results = resolver_.resolve(host_, port_);
 	auto ep = net::connect(ws_.next_layer(), results);
@@ -48,24 +43,42 @@ void connect()
 	ws_.handshake(host_, "/");
 }
 
-void subscribe(std::string target)
+void BinanceClient::subscribe(std::string target)
 {
 	std::string subReq = std::format("{ \"method\": \"SUBSCRIBE\", \"params\": [ {} ], \"id\" : 1", target);
-
 	ws_.write(net::buffer(subReq);
 }
 
-void run()
+void BinanceClient::read()
 {
 	beast::flat_buffer buffer;
-	while (true) {
-		ws_.read(buffer);
-		std::string payload = beast::buffer_to_string(buffer.data());
-		buffer.consume(buffer.size());
-		handleMessage(payload);
-	}
-	
+	ws_.async_read(buffer, [this](beast::error_code, size_t bytes) {
+		if (!ec) {
+			std::string payload = beast::buffer_to_string(buffer.data());
+			buffer.consume(buffer.size());
+			buffer_.push(payload);
+			read();
+		} else {
+			std::cerr << "WebSocket Read Error: " << ec.message() << std::endl;
+		}
+	});
 }
+
+void BinanceClient::run()
+{
+	std::thread ioThread([&ioc_]() {
+		ioc_.run();
+	});
+	read();
+}
+
+std::string BinanceClient::readFromBuffer()
+{
+	std::string payload = buffer.front();
+	buffer.pop();
+	return payload;
+}
+
 // TODO: Implement some way that data gets passed to here properly (proper target format @BTCUSDT/limit=100
 static std::string BinanceClient::getOrderBookSnapshot(const std::string& target)
 {
@@ -97,9 +110,3 @@ static std::string BinanceClient::getOrderBookSnapshot(const std::string& target
 	}	
 }
 
-std::string BinanceClient::readFromBuffer()
-{
-	std::string payload = buffer.front();
-	buffer.pop();
-	return payload;
-}

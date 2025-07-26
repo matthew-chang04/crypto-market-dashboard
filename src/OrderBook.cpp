@@ -10,7 +10,7 @@ OrderBook::OrderBook(Exchange ex, std::unique_ptr<WebSocketClient> webSocket) : 
 }
 
 void OrderBook::populateSnapshot(const json& orderData)
-{
+
 	lastUpdateID_ = orderData["lastUpdateID"];
 
 	for (auto& bid : orderData["bids"]) {
@@ -30,11 +30,11 @@ void OrderBook::update()
 		if (updateData["u"] < lastUpdateID_) {
 			continue;
 		} else if (updateData["U"] > lastUpdateID_) {
-			break;
 			// TODO: Implement logic for restarting the orderbook
+			break;
 		}
-		lastUpdateID_ = updateData["u"];
 
+		lastUpdateID_ = updateData["u"];
 		for (auto& bid : updateData["bids"]) {
 			if (!stod(bid[1])) {
 				bids_.erase(stod(bid[0]));
@@ -62,7 +62,7 @@ void OrderBook::initOrderBook()
 
 	// TODO: verify thread logic!!!
 	webSocket_->subscribe(target);
-	std::thread stream(websocket_->run);
+	std::thread stream(&WebSocketClient::run, &webSocket_);
 
 	json snapshot = json::parse(getOrderBookSnapshot(target));
 	json update = json::parse(websocket_->readFromBuffer());
@@ -71,7 +71,7 @@ void OrderBook::initOrderBook()
 		snapshot = json::parse(getOrderBookSnapshot(target));
 	}
 
-	// Updating with the first update
+	// First Orderbook update
 	if (update["u"] > snapshot["lastUpdateID"]) {
 		lastUpdateID_ = update["u"];
 
@@ -91,8 +91,6 @@ void OrderBook::initOrderBook()
 		}
 	}
 	// TODO: verify thread logic!!!
-	this.populateSnapshot(snapshot);
-	std::thread orderParser([this] () {
-		this.update();
-	});
+	populateSnapshot(snapshot);
+	std::thread orderParser(&OrderBook::update, this);
 }

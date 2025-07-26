@@ -4,7 +4,7 @@
 class WebSocketClient
 {
 public:
-	
+
 	WebSocketClient(std::string& host, std::string& port) : host_{host}, port_{port}, ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv12_client}, resolver_{ioc_}, ws_{ioc_, sslCtx_} {} 
 	virtual ~WebSocketClient() {}
 
