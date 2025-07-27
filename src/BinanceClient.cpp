@@ -1,29 +1,44 @@
 #include "BinanceClient.hpp"
+#include <nlohmann/json.hpp>
+#include <boost/beast/core.hpp>
+#include <boost/beast/websocket.hpp>
+#include <boost/beast/http.hpp>
+#include <boost/beast/version.hpp>
+#include <boost/asio/connect.hpp>
+#include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ssl/error.hpp>
+#include <boost/asio/ssl/stream.hpp>
+#include <boost/beast/core/buffers_to_string.hpp>
+#include <boost/beast/core/flat_buffer.hpp>
+#include <string>
+#include <thread>
+#include <iostream>
+#include <mutex>
+#include <queue>
+#include <format>
 
-#define HOST "stream.binance.com"
-#define PORT "9443"
-
-namespace json = nlohmann::json;
 namespace http = beast::http;           
 namespace websocket = beast::websocket; 
 namespace net = boost::asio;           
-using tcp = boost::asio::ip::tcp;       
+using tcp = boost::asio::ip::tcp;      
+using json = nlohmann::json;
+
 
 //TODO: SEE about adding enums to standardize names for coins (ie BTC, ETH, SOL)
 // THIS WILL allow us to send in specific symbols. probably worth implementing some enum in the WebSocketClient Class, and passing symbol from there...
 
-BinanceClient::BinanceClient() : WebSocketClient(HOST, PORT), buffer_{}
-{
-	
-}
+const std::string BinanceClient::HOST = "stream.binance.com";
+const std::string BinanceClient::PORT = "9443";
 
-void BinaceClient::connect()
+BinanceClient::BinanceClient() : WebSocketClient(HOST, PORT), buffer_{} {}
+
+void BinanceClient::connect()
 {
 	auto const results = resolver_.resolve(host_, port_);
-	auto ep = net::connect(ws_.next_layer(), results);
+	auto ep = net::connect(ws_.next_layer().next_layer(), results);
 
 	host_ += ":" + std::to_string(ep.port());
-	ws_.set_option(websocket::stream::base::decorator(
+	ws_.set_option(websocket::stream_base::decorator(
 		[](websocket::request_type& req)
 		{
 			req.set(http::field::user_agent, std::string(BOOST_BEAST_VERSION_STRING) + " websocket-client-coro");
@@ -32,17 +47,17 @@ void BinaceClient::connect()
 	ws_.handshake(host_, "/");
 }
 
-void BinanceClient::subscribe(std::string target)
+void BinanceClient::subscribe(const std::string& target)
 {
 	std::string subReq = std::format("{ \"method\": \"SUBSCRIBE\", \"params\": [ {} ], \"id\" : 1", target);
-	ws_.write(net::buffer(subReq);
+	ws_.write(net::buffer(subReq));
 }
 
 void BinanceClient::read()
 {
-	ws_.async_read(readDump_, [this](beast::error_code, size_t bytes) {
+	ws_.async_read(readDump_, [this](beast::error_code ec, size_t bytes) {
 		if (!ec) {
-			std::string payload = beast::buffer_to_string(readDump_.data());
+			std::string payload = boost::beast::buffers_to_string(readDump_.data());
 			readDump_.consume(readDump_.size());
 			buffer_.push(payload);
 			read();
@@ -57,26 +72,28 @@ void BinanceClient::run()
 	read();
 	std::thread([this]() {
 		ioc_.run();
-	}).detatch();
+	}).detach();
 }
 
 std::string BinanceClient::readFromBuffer()
 {
-	std::string payload = buffer.front();
-	buffer.pop();
+	std::string payload = buffer_.front();
+	buffer_.pop();
 	return payload;
 }
 
 void BinanceClient::stop()
 {
-	ws_.close();
-	ioc_.stop();
+	ws_.close(websocket::close_code::normal);
+	ioc_.stop( );
 	readDump_.consume(readDump_.size());
-	buffer_.clear();
+	while (!buffer_.empty()) {
+		buffer_.pop();
+	}
 }
 
 // TODO: Implement some way that data gets passed to here properly (proper target format @BTCUSDT/limit=100
-static std::string BinanceClient::getOrderBookSnapshot(const std::string& target)
+std::string BinanceClient::getOrderBookSnapshot(const std::string& target)
 {
 	try {
 		const std::string API_HOST = "api.binance.com";
@@ -84,10 +101,14 @@ static std::string BinanceClient::getOrderBookSnapshot(const std::string& target
 		const std::string API_END = "/api/v3/depth?symbol=";
 		const int version = 11; 
 		
-		beast::tcp_stream stream(ioc_, sslCtx_);
-		auto const results = resolver_.resolve(API_HOST, API_PORT);
+		net::io_context ioc;
+		net::ssl::context sslCtx{boost::asio::ssl::context::tlsv12_client};
+		tcp::resolver resolver{ioc};
+
+		net::ssl::stream<beast::tcp_stream> stream(ioc, sslCtx);
+		auto const results = resolver.resolve(API_HOST, API_PORT);
 		beast::get_lowest_layer(stream).connect(results);
-		stream.handshake(ssl::stream_base::client);
+		stream.handshake(net::ssl::stream_base::client);
 
 		http::request<http::string_body> req{http::verb::get, API_END + target, version};
 		req.set(http::field::host, API_HOST);
@@ -99,7 +120,7 @@ static std::string BinanceClient::getOrderBookSnapshot(const std::string& target
 		http::response<http::dynamic_body> result;
 		http::read(stream, buffer, result);
 
-		return beast::result_buffers_to_string(result.body().data());
+		return boost::beast::buffers_to_string(result.body().data());
 	} catch(std::exception const& e) {
 		std::cerr << "ERROR: " << e.what() << std::endl;
 		return "";
