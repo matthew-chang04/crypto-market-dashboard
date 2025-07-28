@@ -1,9 +1,12 @@
+#include "BinanceClient.hpp"
 #include "OrderBook.hpp"
-#include <nlohmann/json>
+#include <nlohmann/json.hpp>
+#include <thread>
+#include <iostream>
 
 using json = nlohmann::json;
 
-OrderBook::OrderBook(Exchange ex, std::unique_ptr<WebSocketClient> webSocket) : ex_{ex}, webSocket_{std::move(webSocket)}, lastUpdateID_{}, bids_{}, bidsUpdated_{}, asks_{}, asksUpdated_{}, stopped_{false}
+OrderBook::OrderBook(Exchange ex, std::unique_ptr<WebSocketClient> webSocket) : ex_{ex}, webSocket_{std::move(webSocket)}, lastUpdateID_{}, bids_{}, asks_{}, stopped_{false}
 {	
 
 }
@@ -13,47 +16,58 @@ void OrderBook::initOrderBook()
 	std::string target;
 	switch (ex_) {
 		case Exchange::Binance:
-			target = "btcusdt@depth"
+			target = "btcusdt@depth";
+			break;
+		case Exchange::Kraken:
+			break;
+		case Exchange::Coinbase:
+			break;
 	}
 	webSocket_->connect();
 	webSocket_->subscribe(target);
 	webSocket_->run();
 
 	// POSSIBLE SOURCE OF ERROR: Reading from the websocket Buffer
-	json snapshot = json::parse(getOrderBookSnapshot(target));
-	json update = json::parse(websocket_->readFromBuffer());
+	json snapshot = json::parse(BinanceClient::getOrderBookSnapshot(target));
+	json update = json::parse(webSocket_->readFromBuffer());
 
-	while (snapshot["lastUpdateID"] < update["U"]) {
-		snapshot = json::parse(getOrderBookSnapshot(target));
+	while (snapshot["lastUpdateID"].get<uint64_t>() < update["U"].get<uint64_t>()) {
+		snapshot = json::parse(BinanceClient::getOrderBookSnapshot(target));
 	}
 
 	// First Orderbook update
-	if (update["u"] > snapshot["lastUpdateID"]) {
-		lastUpdateID_ = update["u"];
+	if (update["u"].get<uint64_t>() > snapshot["lastUpdateID"]) {
+		lastUpdateID_ = update["u"].get<uint64_t>();
 
-		for (auto& bid : update["bids"]) {
-			bidsUpdated_.push_back(bid[0]);
+		std::vector<std::vector<std::string>> bids = update["bids"].get<std::vector<std::vector<std::string>>>();
+		std::vector<std::vector<std::string>> asks = update["asks"].get<std::vector<std::vector<std::string>>>();
 
-			if (!stod(bid[1])) {
-				bids_.erase(stod(bid[0]));
+		for (const std::vector<std::string>& bid : bids) {
+			double price = stod(bid[0]);
+			double quantity = stod(bid[1]);
+
+			if (!quantity) {
+				bids_.erase(price);
 			} else {
-				bids_[stod(bid[0])] = stod(bid[1]);
+				bids_[price] = quantity;
 			}
 		}
-		for (auto& ask : update["asks"]) {
-			asksUpdated_.push_back(ask[0]);
+		for (const std::vector<std::string>& ask : asks) {
 
-			if (!stod(ask[1])) {
-				asks_.erase(stod(ask[0]));
+			double price = stod(ask[0]);
+			double quantity = stod(ask[1]);
+
+			if (!quantity) { 
+				asks_.erase(price);
 			} else {
-				asks_[stod(ask[0])] = stod(ask[1]);
+				asks_[price] = quantity;
 			}
 		}
 	}
-	// TODO: verify thread logic!!!
+
 	populateSnapshot(snapshot);
 	std::thread orderParser(&OrderBook::update, this);
-	orderParser.detatch();
+	orderParser.detach();
 }
 
 void OrderBook::stop()
@@ -66,14 +80,21 @@ void OrderBook::stop()
 }
 
 void OrderBook::populateSnapshot(const json& orderData)
+{
+	lastUpdateID_ = orderData["lastUpdateID"].get<uint64_t>();
 
-	lastUpdateID_ = orderData["lastUpdateID"];
+	std::vector<std::vector<std::string>> bids = orderData["bids"].get<std::vector<std::vector<std::string>>>();
+	std::vector<std::vector<std::string>> asks = orderData["asks"].get<std::vector<std::vector<std::string>>>();
 
-	for (auto& bid : orderData["bids"]) {
-		bids.insert({stod(bid[0]), stod(bid[1])});
+	for (const std::vector<std::string>& bid : bids) {
+		double price = stod(bid[0]);
+		double quantity = stod(bid[1]);
+		bids_.insert({price, quantity});
 	}
-	for (auto& ask : orderData["asks"]) {
-		asks.insert({stod(ask[0]), stod(ask[1])});
+	for (const std::vector<std::string>& ask : asks) {
+		double price = stod(ask[0]);
+		double quantity = stod(ask[1]);
+		asks_.insert({price, quantity});
 	}
 }
 
@@ -83,37 +104,42 @@ void OrderBook::update()
 		if (stopped_) return;
 
 		json updateData;
-		if (webSocket_->buffer_.isEmpty()) {
+		if (webSocket_->bufferIsEmpty()) {
 			continue;
 		} else {
-			updateData = webSocket_.readFromBuffer();
+			updateData = webSocket_->readFromBuffer();
 		}
 
-		if (updateData["u"] < lastUpdateID_) {
+		if (updateData["u"].get<uint64_t>() < lastUpdateID_) {
 			continue;
-		} else if (updateData["U"] > lastUpdateID_) { // Need to reset orderbook
+		} else if (updateData["U"].get<uint64_t>() > lastUpdateID_) { // Need to reset orderbook
 			stop();
 			initOrderBook(); 
 			break;
 		}
 
-		lastUpdateID_ = updateData["u"];
-		for (auto& bid : updateData["bids"]) {
-			bidsUpdated_.push_back(bid[0]);
+		lastUpdateID_ = updateData["u"].get<uint64_t>();
+		std::vector<std::vector<std::string>> bids = updateData["bids"].get<std::vector<std::vector<std::string>>>();
+		std::vector<std::vector<std::string>> asks = updateData["asks"].get<std::vector<std::vector<std::string>>>();
 
-			if (!stod(bid[1])) {
-				bids_.erase(stod(bid[0]));
+		for (std::vector<std::string>& bid : bids) {
+			double price = stod(bid[0]);
+			double quantity = stod(bid[1]);
+
+			if (!quantity) {
+				bids_.erase(price);
 			} else {
-				bids_[stod(bid[0])] = stod(bid[1]);
+				bids_[price] = quantity; 
 			}
 		}
-		for (auto& ask : updateData["asks"]) {
-			asksUpdated_.push_back(ask[0]);
+		for (std::vector<std::string> ask : asks) {
+			double price = stod(ask[0]);
+			double quantity = stod(ask[1]);
 
-			if (!stod(ask[1])) {
-				asks_.erase(stod(ask[0]));
+			if (!quantity) {
+				asks_.erase(price);
 			} else {
-				asks_[stod(ask[0])] = stod(ask[1]);
+				asks_[price] = quantity;
 			}
 		}
 	}

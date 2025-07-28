@@ -4,6 +4,7 @@
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
+#include <boost/beast/ssl.hpp> 
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/error.hpp>
@@ -15,7 +16,7 @@
 #include <iostream>
 #include <mutex>
 #include <queue>
-#include <format>
+#include <fmt>
 
 namespace http = beast::http;           
 namespace websocket = beast::websocket; 
@@ -29,8 +30,6 @@ using json = nlohmann::json;
 
 const std::string BinanceClient::HOST = "stream.binance.com";
 const std::string BinanceClient::PORT = "9443";
-
-BinanceClient::BinanceClient() : WebSocketClient(HOST, PORT), buffer_{} {}
 
 void BinanceClient::connect()
 {
@@ -49,7 +48,7 @@ void BinanceClient::connect()
 
 void BinanceClient::subscribe(const std::string& target)
 {
-	std::string subReq = std::format("{ \"method\": \"SUBSCRIBE\", \"params\": [ {} ], \"id\" : 1", target);
+	std::string subReq = fmt::format(R"({ "method": "SUBSCRIBE", "params": [ {} ], "id" : 1"})", target);
 	ws_.write(net::buffer(subReq));
 }
 

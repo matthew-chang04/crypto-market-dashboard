@@ -8,6 +8,7 @@
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
+#include <boost/beast/ssl.hpp>
 #include "WebSocketClient.hpp"
 
 namespace beast = boost::beast;
@@ -21,16 +22,13 @@ public:
 	BinanceClient() : WebSocketClient(HOST, PORT) {}
 	void connect() override;
 	void subscribe(const std::string& target) override;
-	void read();
+	void read() override;
 	void run() override;
-	std::string readFromBuffer();
-	void stop() {}
+	std::string readFromBuffer() override;
+	void stop() override;
 
 	// Reads using REST API not WS stream
 	static std::string getOrderBookSnapshot(const std::string& target);
 
-private:
-	std::queue<std::string> buffer_;
-	beast::flat_buffer readDump_;
 };
 

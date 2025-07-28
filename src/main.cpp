@@ -27,5 +27,5 @@ int main(int argc, char * argv[]) // args: <exchange> <coin> <datatype>
 	}
 	 // TODO: OTHER exchages
 
-	return;
+	return 0;
 }
