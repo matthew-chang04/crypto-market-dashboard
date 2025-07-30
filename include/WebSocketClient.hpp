@@ -19,11 +19,17 @@ class WebSocketClient
 {
 public:
 
-	WebSocketClient(const std::string& host, const std::string& port) : host_{host}, port_{port}, ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv13_client}, resolver_{ioc_}, ws_{ioc_, sslCtx_}, buffer_{}, readDump_{} {} 
-	virtual ~WebSocketClient() {}
+	WebSocketClient(const std::string& host, const std::string& port) : host_{host}, port_{port}, ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv13_client}, resolver_{ioc_}, ws_{}, buffer_{}, readDump_{}
+{
+	sslCtx_.set_default_verify_paths();
+	sslCtx_.set_verify_mode(boost::asio::ssl::verify_peer);
+	ws_ = std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc_, sslCtx_);
+} 
+
+	virtual ~WebSocketClient() = default;
 
 	virtual void connect() = 0;
-	virtual void subscribe(const std::string& target);
+	virtual void subscribe(const std::string& target) = 0;
 	virtual void read() = 0;
 	virtual void run() = 0;
 	virtual std::string readFromBuffer() = 0;
@@ -42,7 +48,7 @@ protected:
 	net::io_context ioc_;
 	net::ssl::context sslCtx_;
 	tcp::resolver resolver_;
-	websocket::stream<net::ssl::stream<tcp::socket>> ws_;
+	std::unique_ptr<websocket::stream<net::ssl::stream<tcp::socket>>> ws_;
 
 	std::queue<std::string> buffer_;
 	beast::flat_buffer readDump_;

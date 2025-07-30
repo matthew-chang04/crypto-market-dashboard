@@ -16,7 +16,7 @@
 #include <iostream>
 #include <mutex>
 #include <queue>
-#include <fmt>
+#include <fmt/format.h>
 
 namespace http = beast::http;           
 namespace websocket = beast::websocket; 
@@ -34,27 +34,28 @@ const std::string BinanceClient::PORT = "9443";
 void BinanceClient::connect()
 {
 	auto const results = resolver_.resolve(host_, port_);
-	auto ep = net::connect(ws_.next_layer().next_layer(), results);
+	auto ep = net::connect(ws_->next_layer().next_layer(), results);
 
 	host_ += ":" + std::to_string(ep.port());
-	ws_.set_option(websocket::stream_base::decorator(
+	ws_->set_option(websocket::stream_base::decorator(
 		[](websocket::request_type& req)
 		{
 			req.set(http::field::user_agent, std::string(BOOST_BEAST_VERSION_STRING) + " websocket-client-coro");
 		}));
 
-	ws_.handshake(host_, "/");
+	ws_->next_layer().handshake(net::ssl::stream_base::client);
+	ws_->handshake(host_, "/");
 }
 
 void BinanceClient::subscribe(const std::string& target)
 {
 	std::string subReq = fmt::format(R"({ "method": "SUBSCRIBE", "params": [ {} ], "id" : 1"})", target);
-	ws_.write(net::buffer(subReq));
+	ws_->write(net::buffer(subReq));
 }
 
 void BinanceClient::read()
 {
-	ws_.async_read(readDump_, [this](beast::error_code ec, size_t bytes) {
+	ws_->async_read(readDump_, [this](beast::error_code ec, size_t bytes) {
 		if (!ec) {
 			std::string payload = boost::beast::buffers_to_string(readDump_.data());
 			readDump_.consume(readDump_.size());
@@ -83,7 +84,7 @@ std::string BinanceClient::readFromBuffer()
 
 void BinanceClient::stop()
 {
-	ws_.close(websocket::close_code::normal);
+	ws_->close(websocket::close_code::normal);
 	ioc_.stop( );
 	readDump_.consume(readDump_.size());
 	while (!buffer_.empty()) {
