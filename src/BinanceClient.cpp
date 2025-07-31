@@ -7,6 +7,7 @@
 #include <boost/beast/ssl.hpp> 
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
+#include <boost/asio/ssl.hpp> // verify this
 #include <boost/asio/ssl/error.hpp>
 #include <boost/asio/ssl/stream.hpp>
 #include <boost/beast/core/buffers_to_string.hpp>
@@ -17,6 +18,7 @@
 #include <mutex>
 #include <queue>
 #include <fmt/format.h>
+#include <stdexcept>
 
 namespace http = beast::http;           
 namespace websocket = beast::websocket; 
@@ -34,22 +36,38 @@ const std::string BinanceClient::PORT = "9443";
 void BinanceClient::connect()
 {
 	auto const results = resolver_.resolve(host_, port_);
-	auto ep = net::connect(ws_->next_layer().next_layer(), results);
+	auto ep = net::connect(beast::get_lowest_layer(*ws_), results);
+
+	if (! SSL_set_tlsext_host_name(ws_->next_layer().native_handle(), host_.c_str())) {
+		throw beast::system_error(static_cast<int>(::ERR_get_error()), net::error::get_ssl_category());
+	}
+
+	ws_->next_layer().set_verify_callback(net::ssl::host_name_verification(host_));
 
 	host_ += ":" + std::to_string(ep.port());
+
+	try {
+		ws_->next_layer().handshake(net::ssl::stream_base::client);
+	} catch (const std::exception& ec) {
+		std::cerr << "SSL Handshake Error: " << ec.what() << std::endl;
+		throw;
+	}
+
 	ws_->set_option(websocket::stream_base::decorator(
 		[](websocket::request_type& req)
 		{
 			req.set(http::field::user_agent, std::string(BOOST_BEAST_VERSION_STRING) + " websocket-client-coro");
 		}));
 
-	ws_->next_layer().handshake(net::ssl::stream_base::client);
-	ws_->handshake(host_, "/");
+	ws_->handshake(host_, "/stream");
 }
 
 void BinanceClient::subscribe(const std::string& target)
 {
-	std::string subReq = fmt::format(R"({ "method": "SUBSCRIBE", "params": [ {} ], "id" : 1"})", target);
+	if (!beast::get_lowest_layer(*ws_).is_open()) {
+		throw std::invalid_argument("Cannot Subscribe using closed websocket");
+	}
+	std::string subReq = fmt::format(R"({{ "method": "SUBSCRIBE", "params": [ "{}" ], "id" : 1 }})", target);
 	ws_->write(net::buffer(subReq));
 }
 

@@ -22,7 +22,7 @@ public:
 	WebSocketClient(const std::string& host, const std::string& port) : host_{host}, port_{port}, ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv13_client}, resolver_{ioc_}, ws_{}, buffer_{}, readDump_{}
 {
 	sslCtx_.set_default_verify_paths();
-	sslCtx_.set_verify_mode(boost::asio::ssl::verify_peer);
+	sslCtx_.set_verify_mode(net::ssl::verify_peer);
 	ws_ = std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc_, sslCtx_);
 } 
 
@@ -40,7 +40,6 @@ public:
 		return buffer_.empty();
 	}
 	
-	// TODO: Implement the disconnect logic, make sure the web socket closes cleanly (veryify if this should be done on the websocket or derrive class level
 protected:
 	std::string host_;
 	std::string port_;
