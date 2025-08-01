@@ -1,4 +1,6 @@
 #include <string>
+#include <queue>
+#include <iostream>
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -21,9 +23,14 @@ public:
 
 	WebSocketClient(const std::string& host, const std::string& port) : host_{host}, port_{port}, ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv13_client}, resolver_{ioc_}, ws_{}, buffer_{}, readDump_{}
 {
-	sslCtx_.set_default_verify_paths();
-	sslCtx_.set_verify_mode(net::ssl::verify_peer);
-	ws_ = std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc_, sslCtx_);
+	try {
+		sslCtx_.set_default_verify_paths();
+		sslCtx_.set_verify_mode(net::ssl::verify_peer);
+		ws_ = std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc_, sslCtx_);
+	} catch (const std::exception& e) {
+		std::cerr << "Error initializing WebSocketClient: " << e.what() << std::endl;
+		throw;
+	}
 } 
 
 	virtual ~WebSocketClient() = default;

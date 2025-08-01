@@ -29,7 +29,15 @@ void OrderBook::initOrderBook()
 
 	// POSSIBLE SOURCE OF ERROR: Reading from the websocket Buffer
 	json snapshot = json::parse(BinanceClient::getOrderBookSnapshot(target));
+	std::cout << "Order Book Snapshot: " << snapshot.dump(4) << std::endl;
+
 	json update = json::parse(webSocket_->readFromBuffer());
+
+	if (update["code"].get<int>() < 0) {
+		std::cerr << "Error making HTTP request: " << update["msg"].get<std::string>() << std::endl;
+		throw;
+	}
+	std::cout << "Order Book Update: " << update.dump(4) << std::endl;
 
 	while (snapshot["lastUpdateID"].get<uint64_t>() < update["U"].get<uint64_t>()) {
 		snapshot = json::parse(BinanceClient::getOrderBookSnapshot(target));

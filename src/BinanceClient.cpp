@@ -35,31 +35,34 @@ const std::string BinanceClient::PORT = "9443";
 
 void BinanceClient::connect()
 {
-	auto const results = resolver_.resolve(host_, port_);
-	auto ep = net::connect(beast::get_lowest_layer(*ws_), results);
-
-	if (! SSL_set_tlsext_host_name(ws_->next_layer().native_handle(), host_.c_str())) {
-		throw beast::system_error(static_cast<int>(::ERR_get_error()), net::error::get_ssl_category());
-	}
-
-	ws_->next_layer().set_verify_callback(net::ssl::host_name_verification(host_));
-
-	host_ += ":" + std::to_string(ep.port());
-
 	try {
+		auto const results = resolver_.resolve(host_, port_);
+		auto ep = net::connect(beast::get_lowest_layer(*ws_), results);
+
+		if (! SSL_set_tlsext_host_name(ws_->next_layer().native_handle(), host_.c_str())) {
+			throw beast::system_error(static_cast<int>(::ERR_get_error()), net::error::get_ssl_category());
+		}
+
+		ws_->next_layer().set_verify_callback(net::ssl::host_name_verification(host_));
+		host_ += ":" + std::to_string(ep.port());
+
 		ws_->next_layer().handshake(net::ssl::stream_base::client);
+
+		ws_->set_option(websocket::stream_base::decorator(
+			[](websocket::request_type& req)
+			{
+				req.set(http::field::user_agent, std::string(BOOST_BEAST_VERSION_STRING) + " websocket-client-coro");
+			}));
+
+		ws_->handshake(host_, "/stream");
+
 	} catch (const std::exception& ec) {
-		std::cerr << "SSL Handshake Error: " << ec.what() << std::endl;
+		std::cerr << "WebSocket Connect Error: " << ec.what() << std::endl;
+		throw;
+	} catch (const boost::system::system_error& ec) {
+		std::cerr << "WebSocket System Error: " << ec.code().message() << std::endl;
 		throw;
 	}
-
-	ws_->set_option(websocket::stream_base::decorator(
-		[](websocket::request_type& req)
-		{
-			req.set(http::field::user_agent, std::string(BOOST_BEAST_VERSION_STRING) + " websocket-client-coro");
-		}));
-
-	ws_->handshake(host_, "/stream");
 }
 
 void BinanceClient::subscribe(const std::string& target)
@@ -67,8 +70,25 @@ void BinanceClient::subscribe(const std::string& target)
 	if (!beast::get_lowest_layer(*ws_).is_open()) {
 		throw std::invalid_argument("Cannot Subscribe using closed websocket");
 	}
-	std::string subReq = fmt::format(R"({{ "method": "SUBSCRIBE", "params": [ "{}" ], "id" : 1 }})", target);
-	ws_->write(net::buffer(subReq));
+
+	try {
+		std::string subReq = fmt::format(R"({{ "method": "SUBSCRIBE", "params": [ "{}" ], "id" : 1 }})", target);
+		ws_->write(net::buffer(subReq));
+		
+		ws_->read(readDump_);
+		std::string payload = boost::beast::buffers_to_string(readDump_.data());
+		readDump_.consume(readDump_.size());
+
+		json response = json::parse(payload);
+		if (response["result"].is_null()) {
+			std::cout << "Subscription successful for target: " << target << std::endl;
+		}
+
+	} catch (const std::exception& ec) {
+		std::cerr << "WebSocket Subscribe Error: " << ec.what() << std::endl;
+		throw;
+	}
+
 }
 
 void BinanceClient::read()
@@ -81,6 +101,7 @@ void BinanceClient::read()
 			read();
 		} else {
 			std::cerr << "WebSocket Read Error: " << ec.message() << std::endl;
+			throw std::runtime_error("WebSocket read failed");
 		}
 	});
 }
@@ -128,7 +149,8 @@ std::string BinanceClient::getOrderBookSnapshot(const std::string& target)
 		beast::get_lowest_layer(stream).connect(results);
 		stream.handshake(net::ssl::stream_base::client);
 
-		http::request<http::string_body> req{http::verb::get, API_END + target, version};
+			// TODO: MAKE THIS SCALABLE (WE ARE HARD CODING BTCUSDT)
+		http::request<http::string_body> req{http::verb::get, API_END + "BTCUSDT", version};
 		req.set(http::field::host, API_HOST);
 		req.set(http::field::user_agent, BOOST_BEAST_VERSION_STRING);
 
