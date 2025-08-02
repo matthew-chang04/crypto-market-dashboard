@@ -19,6 +19,7 @@
 #include <queue>
 #include <fmt/format.h>
 #include <stdexcept>
+#include <chrono>
 
 namespace http = beast::http;           
 namespace websocket = beast::websocket; 
@@ -35,34 +36,76 @@ const std::string BinanceClient::PORT = "9443";
 
 void BinanceClient::connect()
 {
-	try {
-		auto const results = resolver_.resolve(host_, port_);
-		auto ep = net::connect(beast::get_lowest_layer(*ws_), results);
+    const int MAX_RETRIES = 3;
+    int retries = 0;
+    
+    while (retries < MAX_RETRIES) {
+        try {
+            // Set timeout for operations
+            beast::get_lowest_layer(*ws_).expires_after(std::chrono::seconds(30));
+            
+            // Clear any existing connection
+            if (ws_->is_open()) {
+                ws_->close(websocket::close_code::normal);
+            }
+            
+            auto const results = resolver_.resolve(host_, port_);
+            auto ep = net::connect(beast::get_lowest_layer(*ws_), results);
 
-		if (! SSL_set_tlsext_host_name(ws_->next_layer().native_handle(), host_.c_str())) {
-			throw beast::system_error(static_cast<int>(::ERR_get_error()), net::error::get_ssl_category());
-		}
+            // SSL Setup
+            if (!SSL_set_tlsext_host_name(ws_->next_layer().native_handle(), host_.c_str())) {
+                throw beast::system_error(
+                    static_cast<int>(::ERR_get_error()),
+                    net::error::get_ssl_category()
+                );
+            }
 
-		ws_->next_layer().set_verify_callback(net::ssl::host_name_verification(host_));
-		host_ += ":" + std::to_string(ep.port());
+            ws_->next_layer().set_verify_callback(net::ssl::host_name_verification(host_));
+            
+            // Update host with port
+            std::string original_host = host_;
+            host_ += ":" + std::to_string(ep.port());
 
-		ws_->next_layer().handshake(net::ssl::stream_base::client);
+            // SSL Handshake
+            ws_->next_layer().handshake(net::ssl::stream_base::client);
 
-		ws_->set_option(websocket::stream_base::decorator(
-			[](websocket::request_type& req)
-			{
-				req.set(http::field::user_agent, std::string(BOOST_BEAST_VERSION_STRING) + " websocket-client-coro");
-			}));
+            // WebSocket Setup
+            ws_->set_option(websocket::stream_base::timeout::suggested(
+                beast::role_type::client));
 
-		ws_->handshake(host_, "/stream");
+            ws_->set_option(websocket::stream_base::decorator(
+                [](websocket::request_type& req) {
+                    req.set(http::field::user_agent,
+                        std::string(BOOST_BEAST_VERSION_STRING) + " websocket-client-coro");
+                }));
 
-	} catch (const std::exception& ec) {
-		std::cerr << "WebSocket Connect Error: " << ec.what() << std::endl;
-		throw;
-	} catch (const boost::system::system_error& ec) {
-		std::cerr << "WebSocket System Error: " << ec.code().message() << std::endl;
-		throw;
-	}
+            // WebSocket Handshake
+            ws_->handshake(host_, "/stream");
+            
+			// Set no timeout after successful connection
+			ws_->set_option(websocket::stream_base::timeout::suggested(
+				beast::role_type::client));
+			
+			std::cout << "Connected successfully to " << host_ << std::endl;
+            return;
+
+        } catch (const boost::beast::system_error& be) {
+            std::cerr << "Beast error (attempt " << retries + 1 << "): " 
+                     << be.code() << ": " << be.what() << std::endl;
+            retries++;
+            
+            if (retries == MAX_RETRIES) {
+                throw;
+            }
+            
+            // Exponential backoff
+            std::this_thread::sleep_for(std::chrono::seconds(1 << retries));
+            
+        } catch (const std::exception& e) {
+            std::cerr << "Standard error: " << e.what() << std::endl;
+            throw;
+        }
+    }
 }
 
 void BinanceClient::subscribe(const std::string& target)

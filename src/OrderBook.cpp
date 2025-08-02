@@ -33,7 +33,7 @@ void OrderBook::initOrderBook()
 
 	json update = json::parse(webSocket_->readFromBuffer());
 
-	if (update["code"].get<int>() < 0) {
+	if (update["code"].get<uint64_t>() < 0) {
 		std::cerr << "Error making HTTP request: " << update["msg"].get<std::string>() << std::endl;
 		throw;
 	}
