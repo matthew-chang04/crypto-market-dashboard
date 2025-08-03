@@ -5,6 +5,7 @@
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/beast/ssl.hpp> 
+#include <optional>
 #include <boost/asio/connect.hpp>
 #include <boost/asio/ip/tcp.hpp>
 #include <boost/asio/ssl.hpp> // verify this
@@ -13,6 +14,8 @@
 #include <boost/beast/core/buffers_to_string.hpp>
 #include <boost/beast/core/flat_buffer.hpp>
 #include <string>
+#include <optional>
+#include <condition_variable>
 #include <thread>
 #include <iostream>
 #include <mutex>
@@ -36,40 +39,37 @@ const std::string BinanceClient::PORT = "9443";
 
 void BinanceClient::connect()
 {
-    const int MAX_RETRIES = 3;
+    const int MAX_RETRIES = 10;
     int retries = 0;
-    
     while (retries < MAX_RETRIES) {
+		std::cout << "Attempting to connect to " << host_ << ":" << port_ << " (Attempt " << retries + 1 << ")" << std::endl;
         try {
-            // Set timeout for operations
-            beast::get_lowest_layer(*ws_).expires_after(std::chrono::seconds(30));
-            
-            // Clear any existing connection
             if (ws_->is_open()) {
                 ws_->close(websocket::close_code::normal);
             }
+
+			if (retries > 0) {
+				ws_ = std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc_, sslCtx_);
+
+				auto base_delay = std::min(1000 * (1 << (retries - 1)), 30000); 
+                auto jitter = std::rand() % 1000; // 
+                std::this_thread::sleep_for(std::chrono::milliseconds(base_delay + jitter));
+			}
             
             auto const results = resolver_.resolve(host_, port_);
             auto ep = net::connect(beast::get_lowest_layer(*ws_), results);
 
-            // SSL Setup
-            if (!SSL_set_tlsext_host_name(ws_->next_layer().native_handle(), host_.c_str())) {
-                throw beast::system_error(
-                    static_cast<int>(::ERR_get_error()),
-                    net::error::get_ssl_category()
-                );
-            }
+			if (!SSL_set_tlsext_host_name(ws_->next_layer().native_handle(), host_.c_str())) {
+				beast::error_code ec(static_cast<int>(::ERR_get_error()), net::error::get_ssl_category());
+				throw beast::system_error(ec);
+			}
 
             ws_->next_layer().set_verify_callback(net::ssl::host_name_verification(host_));
             
-            // Update host with port
-            std::string original_host = host_;
-            host_ += ":" + std::to_string(ep.port());
+            std::string handshakeHost = host_ + ":" + std::to_string(ep.port());
 
-            // SSL Handshake
             ws_->next_layer().handshake(net::ssl::stream_base::client);
 
-            // WebSocket Setup
             ws_->set_option(websocket::stream_base::timeout::suggested(
                 beast::role_type::client));
 
@@ -79,28 +79,20 @@ void BinanceClient::connect()
                         std::string(BOOST_BEAST_VERSION_STRING) + " websocket-client-coro");
                 }));
 
-            // WebSocket Handshake
-            ws_->handshake(host_, "/stream");
-            
-			// Set no timeout after successful connection
-			ws_->set_option(websocket::stream_base::timeout::suggested(
-				beast::role_type::client));
-			
-			std::cout << "Connected successfully to " << host_ << std::endl;
+            ws_->handshake(handshakeHost, "/stream");
+
+			std::cout << "Connected successfully to " << handshakeHost << std::endl;
             return;
 
         } catch (const boost::beast::system_error& be) {
             std::cerr << "Beast error (attempt " << retries + 1 << "): " 
                      << be.code() << ": " << be.what() << std::endl;
-            retries++;
+            
+			retries++;
             
             if (retries == MAX_RETRIES) {
                 throw;
-            }
-            
-            // Exponential backoff
-            std::this_thread::sleep_for(std::chrono::seconds(1 << retries));
-            
+            }            
         } catch (const std::exception& e) {
             std::cerr << "Standard error: " << e.what() << std::endl;
             throw;
@@ -157,8 +149,11 @@ void BinanceClient::run()
 	}).detach();
 }
 
-std::string BinanceClient::readFromBuffer()
+std::optional<std::string> BinanceClient::readFromBuffer()
 {
+	if (buffer_.empty()) {
+
+	}
 	std::string payload = buffer_.front();
 	buffer_.pop();
 	return payload;

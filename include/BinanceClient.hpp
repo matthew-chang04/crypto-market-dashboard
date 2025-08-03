@@ -1,7 +1,10 @@
 #pragma once
+#include <optional>
+#include <condition_variable>
 #include <string>
 #include <queue>
 #include <boost/beast/core.hpp>
+#include <optional>
 #include <boost/beast/http.hpp>
 #include <boost/beast/version.hpp>
 #include <boost/asio/connect.hpp>
@@ -11,6 +14,7 @@
 #include <boost/beast/ssl.hpp>
 #include "WebSocketClient.hpp"
 
+using std::optional;
 namespace beast = boost::beast;
 
 class BinanceClient : public WebSocketClient
@@ -22,9 +26,8 @@ public:
 	BinanceClient() : WebSocketClient(HOST, PORT) {}
 	void connect() override;
 	void subscribe(const std::string& target) override;
-	void read() override;
+	std::optional<std::string> readFromBuffer() override;
 	void run() override;
-	std::string readFromBuffer() override;
 	void stop() override;
 
 	// Reads using REST API not WS stream

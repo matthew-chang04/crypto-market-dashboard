@@ -23,32 +23,38 @@ void OrderBook::initOrderBook()
 		case Exchange::Coinbase:
 			break;
 	}
-	webSocket_->connect();
-	webSocket_->subscribe(target);
-	webSocket_->run();
 
-	// POSSIBLE SOURCE OF ERROR: Reading from the websocket Buffer
+	try {
+		webSocket_->connect();
+		webSocket_->subscribe(target);
+		webSocket_->run();
+	} catch (const std::exception& e) {
+		std::cerr << "Error initializing WebSocket connection: " << e.what() << std::endl;
+		throw;
+	}
+
 	json snapshot = json::parse(BinanceClient::getOrderBookSnapshot(target));
 	std::cout << "Order Book Snapshot: " << snapshot.dump(4) << std::endl;
 
 	json update = json::parse(webSocket_->readFromBuffer());
-
-	if (update["code"].get<uint64_t>() < 0) {
+	std::cout << "Order Book Update: " << update.dump(4) << std::endl;
+	
+/*	if (update["code"].get<uint64_t>() < 0) {
 		std::cerr << "Error making HTTP request: " << update["msg"].get<std::string>() << std::endl;
 		throw;
 	}
-	std::cout << "Order Book Update: " << update.dump(4) << std::endl;
 
-	while (snapshot["lastUpdateID"].get<uint64_t>() < update["U"].get<uint64_t>()) {
+*/
+	while (snapshot["lastUpdateId"].get<uint64_t>() < update["U"].get<uint64_t>()) {
 		snapshot = json::parse(BinanceClient::getOrderBookSnapshot(target));
 	}
 
 	// First Orderbook update
-	if (update["u"].get<uint64_t>() > snapshot["lastUpdateID"]) {
+	if (update["u"].get<uint64_t>() > snapshot["lastUpdateId"].get<uint64_t>()) {
 		lastUpdateID_ = update["u"].get<uint64_t>();
 
-		std::vector<std::vector<std::string>> bids = update["bids"].get<std::vector<std::vector<std::string>>>();
-		std::vector<std::vector<std::string>> asks = update["asks"].get<std::vector<std::vector<std::string>>>();
+		std::vector<std::vector<std::string>> bids = update["b"].get<std::vector<std::vector<std::string>>>();
+		std::vector<std::vector<std::string>> asks = update["a"].get<std::vector<std::vector<std::string>>>();
 
 		for (const std::vector<std::string>& bid : bids) {
 			double price = stod(bid[0]);
@@ -89,7 +95,7 @@ void OrderBook::stop()
 
 void OrderBook::populateSnapshot(const json& orderData)
 {
-	lastUpdateID_ = orderData["lastUpdateID"].get<uint64_t>();
+	lastUpdateID_ = orderData["lastUpdateId"].get<uint64_t>();
 
 	std::vector<std::vector<std::string>> bids = orderData["bids"].get<std::vector<std::vector<std::string>>>();
 	std::vector<std::vector<std::string>> asks = orderData["asks"].get<std::vector<std::vector<std::string>>>();
@@ -127,8 +133,8 @@ void OrderBook::update()
 		}
 
 		lastUpdateID_ = updateData["u"].get<uint64_t>();
-		std::vector<std::vector<std::string>> bids = updateData["bids"].get<std::vector<std::vector<std::string>>>();
-		std::vector<std::vector<std::string>> asks = updateData["asks"].get<std::vector<std::vector<std::string>>>();
+		std::vector<std::vector<std::string>> bids = updateData["b"].get<std::vector<std::vector<std::string>>>();
+		std::vector<std::vector<std::string>> asks = updateData["a"].get<std::vector<std::vector<std::string>>>();
 
 		for (std::vector<std::string>& bid : bids) {
 			double price = stod(bid[0]);
