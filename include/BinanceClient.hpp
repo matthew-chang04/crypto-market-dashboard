@@ -14,7 +14,6 @@
 #include <boost/beast/ssl.hpp>
 #include "WebSocketClient.hpp"
 
-using std::optional;
 namespace beast = boost::beast;
 
 class BinanceClient : public WebSocketClient
@@ -28,6 +27,7 @@ public:
 	void subscribe(const std::string& target) override;
 	std::optional<std::string> readFromBuffer() override;
 	void run() override;
+	void read() override;
 	void stop() override;
 
 	// Reads using REST API not WS stream

@@ -152,7 +152,7 @@ void BinanceClient::run()
 std::optional<std::string> BinanceClient::readFromBuffer()
 {
 	if (buffer_.empty()) {
-
+		return std::nullopt;
 	}
 	std::string payload = buffer_.front();
 	buffer_.pop();

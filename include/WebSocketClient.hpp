@@ -1,4 +1,6 @@
 #include <string>
+#include <optional>
+#include <condition_variable>
 #include <queue>
 #include <iostream>
 #include <boost/beast/websocket.hpp>
@@ -21,7 +23,7 @@ class WebSocketClient
 {
 public:
 
-	WebSocketClient(const std::string& host, const std::string& port) : host_{host}, port_{port}, ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv13_client}, resolver_{ioc_}, ws_{}, buffer_{}, readDump_{}
+	WebSocketClient(const std::string& host, const std::string& port) : host_{host}, port_{port}, ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv12_client}, resolver_{ioc_}, ws_{}, buffer_{}, readDump_{}
 {
 	try {
 		sslCtx_.set_default_verify_paths();
@@ -39,7 +41,7 @@ public:
 	virtual void subscribe(const std::string& target) = 0;
 	virtual void read() = 0;
 	virtual void run() = 0;
-	virtual std::string readFromBuffer() = 0;
+	virtual std::optional<std::string> readFromBuffer() = 0;
 	virtual void stop() = 0;
 
 	bool bufferIsEmpty() const
