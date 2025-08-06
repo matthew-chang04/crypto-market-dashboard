@@ -107,17 +107,17 @@ void OrderBook::populateSnapshot(const json& orderData)
 {
 	lastUpdateID_ = orderData["lastUpdateId"].get<uint64_t>();
 
-	std::vector<std::vector<std::string>> bids = orderData["bids"].get<std::vector<std::vector<std::string>>>();
-	std::vector<std::vector<std::string>> asks = orderData["asks"].get<std::vector<std::vector<std::string>>>();
+	std::vector<std::vector<double>> bids = orderData["bids"].get<std::vector<std::vector<double>>>();
+	std::vector<std::vector<double>> asks = orderData["asks"].get<std::vector<std::vector<double>>>();
 
-	for (const std::vector<std::string>& bid : bids) {
-		double price = stod(bid[0]);
-		double quantity = stod(bid[1]);
+	for (const std::vector<double>& bid : bids) {
+		double price = bid[0];
+		double quantity = bid[1];
 		bids_.insert({price, quantity});
 	}
-	for (const std::vector<std::string>& ask : asks) {
-		double price = stod(ask[0]);
-		double quantity = stod(ask[1]);
+	for (const std::vector<double>& ask : asks) {
+		double price = ask[0];
+		double quantity = ask[1];
 		asks_.insert({price, quantity});
 	}
 }
@@ -148,6 +148,7 @@ void OrderBook::update()
 		std::vector<std::vector<double>> bids = updateData["b"].get<std::vector<std::vector<double>>>();
 		std::vector<std::vector<double>> asks = updateData["a"].get<std::vector<std::vector<double>>>();
 
+		std::lock_guard<std::mutex> lock(obMutex_);
 		for (std::vector<double>& bid : bids) {
 			double price = bid[0];
 			double quantity = bid[1];

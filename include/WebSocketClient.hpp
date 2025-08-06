@@ -44,10 +44,7 @@ public:
 	virtual std::optional<std::string> readFromBuffer() = 0;
 	virtual void stop() = 0;
 
-	bool bufferIsEmpty() const
-	{
-		return buffer_.empty();
-	}
+	bool bufferIsEmpty() const { return buffer_.empty(); }
 	
 protected:
 	std::string host_;

@@ -136,7 +136,10 @@ void BinanceClient::read()
 			read();
 		} else {
 			std::cerr << "WebSocket Read Error: " << ec.message() << std::endl;
-			throw std::runtime_error("WebSocket read failed");
+			// in case of error
+			if (ws_->is_open()) {
+				stop();
+			}
 		}
 	});
 }
