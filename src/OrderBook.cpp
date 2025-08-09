@@ -46,7 +46,7 @@ void OrderBook::initOrderBook()
 /*	if (update["code"].get<uint64_t>() < 0) {
 		std::cerr << "Error making HTTP request: " << update["msg"].get<std::string>() << std::endl;
 		throw;
-	}
+	} 
 
 */
 	json data = update["data"];
