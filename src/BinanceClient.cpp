@@ -52,7 +52,7 @@ void BinanceClient::connect()
 				ws_ = std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc_, sslCtx_);
 
 				auto base_delay = std::min(1000 * (1 << (retries - 1)), 30000); 
-                auto jitter = std::rand() % 1000; // 
+                auto jitter = std::rand() % 1000;  
                 std::this_thread::sleep_for(std::chrono::milliseconds(base_delay + jitter));
 			}
             
@@ -130,20 +130,19 @@ void BinanceClient::read()
 {
 	ws_->async_read(readDump_, [this](beast::error_code ec, size_t bytes) {
 		if (!ec) {
+			std::lock_guard<std::mutex> lock(mutex_);
 			std::string payload = boost::beast::buffers_to_string(readDump_.data());
 			readDump_.consume(readDump_.size());
 			buffer_.push(payload);
 			read();
 		} else {
 			std::cerr << "WebSocket Read Error: " << ec.message() << std::endl;
-			// in case of error
-			if (ws_->is_open()) {
-				stop();
-			}
+			// in case of error, full reset
+			interrupted_ = true;
 		}
 	});
 }
-
+	
 void BinanceClient::run()
 {
 	read();
@@ -154,6 +153,7 @@ void BinanceClient::run()
 
 std::optional<std::string> BinanceClient::readFromBuffer()
 {
+	std::lock_guard<std::mutex> lock(mutex_);
 	if (buffer_.empty()) {
 		return std::nullopt;
 	}
@@ -164,12 +164,39 @@ std::optional<std::string> BinanceClient::readFromBuffer()
 
 void BinanceClient::stop()
 {
-	ws_->close(websocket::close_code::normal);
-	ioc_.stop( );
+	boost::system::error_code ec;
+
+	if (ws_ && ws_->is_open()) {
+		ws_->close(websocket::close_code::normal, ec);
+		if (ec == boost::asio::ssl::error::stream_truncated || ec == boost::asio::error::eof) {
+			ec.clear();
+		} else if (ec) {
+			std::cerr << "Error closing WebSocket: " << ec.message() << std::endl;
+		}
+	}
+
+	if (ws_ && ws_->next_layer().lowest_layer().is_open()) {
+		ws_->next_layer().shutdown();
+		if (ec == boost::asio::ssl::error::stream_truncated || ec == boost::asio::error::eof) {
+			ec.clear();
+		} else if (ec) {
+			std::cerr << "Error shutting down WebSocket: " << ec.message() << std::endl;
+		}
+	}
+
+	if (ws_ && ws_->next_layer().lowest_layer().is_open()) {
+		ws_->next_layer().lowest_layer().close(ec);
+		if (ec) {
+			std::cerr << "Error closing lowest layer: " << ec.message() << std::endl;
+		}
+	}
+	std::lock_guard<std::mutex> lock(mutex_);
 	readDump_.consume(readDump_.size());
 	while (!buffer_.empty()) {
 		buffer_.pop();
 	}
+	ioc_.stop();
+
 }
 
 // TODO: Implement some way that data gets passed to here properly (proper target format @BTCUSDT/limit=100
@@ -207,4 +234,3 @@ std::string BinanceClient::getOrderBookSnapshot(const std::string& target)
 		return "";
 	}	
 }
-

@@ -18,12 +18,13 @@ public:
 	void initOrderBook();
 	void stop();
 	void testLoop();
+
 	
 private:
 	void populateSnapshot(const json& data);
 	void update();
 	void testRun();
-
+ 
 	Exchange ex_;	
 	std::unique_ptr<WebSocketClient> webSocket_;
 	uint64_t lastUpdateID_;
@@ -32,4 +33,5 @@ private:
 	bool stopped_; 
 
 	std::mutex obMutex_;
+	bool snapshotLoaded_ = false;
 };

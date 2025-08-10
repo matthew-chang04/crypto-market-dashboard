@@ -3,6 +3,7 @@
 #include <condition_variable>
 #include <queue>
 #include <iostream>
+#include <mutex>
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/http.hpp>
@@ -23,7 +24,7 @@ class WebSocketClient
 {
 public:
 
-	WebSocketClient(const std::string& host, const std::string& port) : host_{host}, port_{port}, ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv12_client}, resolver_{ioc_}, ws_{}, buffer_{}, readDump_{}
+	WebSocketClient(const std::string& host, const std::string& port) : host_{host}, port_{port}, ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv12_client}, resolver_{ioc_}, ws_{}, buffer_{}, readDump_{}, interrupted_{false}
 {
 	try {
 		sslCtx_.set_default_verify_paths();
@@ -45,6 +46,9 @@ public:
 	virtual void stop() = 0;
 
 	bool bufferIsEmpty() const { return buffer_.empty(); }
+	bool isInterrupted() const { return interrupted_; }
+	void setInterrupted(bool value) { interrupted_ = value; }
+	
 	
 protected:
 	std::string host_;
@@ -57,5 +61,7 @@ protected:
 
 	std::queue<std::string> buffer_;
 	beast::flat_buffer readDump_;
+	std::mutex mutex_;
+	bool interrupted_;
 };
 

@@ -12,6 +12,7 @@ int main(int argc, char * argv[]) // args: <exchange> <coin> <datatype>
 		std::cout << argc << std::endl;
 		std::cerr << "ERROR: Usage: ./Exec <exchange> <coin> <datatype>" << std::endl;
 		std::cout << "EXAMPLE: ./Exec binance btc orderbook" << std::endl;
+		return 0;
 	}
 
 	std::unique_ptr<WebSocketClient> exchangeSocket;

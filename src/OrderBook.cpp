@@ -23,7 +23,7 @@ void OrderBook::initOrderBook()
 		case Exchange::Coinbase:
 			break;
 	}
-
+	// Set up WebSocket
 	try {
 		webSocket_->connect();
 		webSocket_->subscribe(target);
@@ -33,26 +33,20 @@ void OrderBook::initOrderBook()
 		throw;
 	}
 
+	// Get first orderbook snapshot
 	json snapshot = json::parse(BinanceClient::getOrderBookSnapshot(target));
-	std::cout << "Order Book Snapshot: " << snapshot.dump(4) << std::endl;
  
 	std::optional<std::string> rawUpdate;
 	do {
 		rawUpdate = webSocket_->readFromBuffer();
 	} while (!rawUpdate.has_value());
-	json update = json::parse(rawUpdate.value());
-	std::cout << "Order Book Update: " << update.dump(4) << std::endl;
-	
-/*	if (update["code"].get<uint64_t>() < 0) {
-		std::cerr << "Error making HTTP request: " << update["msg"].get<std::string>() << std::endl;
-		throw;
-	} 
 
-*/
+	json update = json::parse(rawUpdate.value());
+	
+	// Make sure update is actually newer
 	json data = update["data"];
 	while (snapshot["lastUpdateId"].get<uint64_t>() < data["U"].get<uint64_t>()) {
 		snapshot = json::parse(BinanceClient::getOrderBookSnapshot(target));
-		std::cout << "Order Book Snapshot: " << snapshot.dump(4) << std::endl;
 	}
 
 	// First Orderbook update
@@ -61,6 +55,8 @@ void OrderBook::initOrderBook()
 
 		std::vector<std::vector<std::string>> bids = data["b"].get<std::vector<std::vector<std::string>>>();
 		std::vector<std::vector<std::string>> asks = data["a"].get<std::vector<std::vector<std::string>>>();
+
+		std::cout << data["a"].dump(4) << std::endl;
 
 		for (const std::vector<std::string>& bid : bids) {
 			double price = stod(bid[0]);
@@ -86,46 +82,51 @@ void OrderBook::initOrderBook()
 	}
 
 	populateSnapshot(snapshot);
-	for (auto it = asks_.rbegin(); it != asks_.rend() && std::distance(asks_.rbegin(), it) < 5; ++it) {
-		std::cout << it->first << " : " << it->second << "\n";
-	}
-		
+	stopped_ = false;
 	std::thread orderParser(&OrderBook::update, this);
 	orderParser.detach();
 }
 
 void OrderBook::stop()
 {
+	std::lock_guard<std::mutex> lock(obMutex_);
 	webSocket_->stop();
-	stopped_ = true;
 	bids_.clear();
 	asks_.clear();
 	lastUpdateID_ = -1;
+	snapshotLoaded_ = false;
+	stopped_ = true;
 }
 
 void OrderBook::populateSnapshot(const json& orderData)
 {
 	lastUpdateID_ = orderData["lastUpdateId"].get<uint64_t>();
 
-	std::vector<std::vector<double>> bids = orderData["bids"].get<std::vector<std::vector<double>>>();
-	std::vector<std::vector<double>> asks = orderData["asks"].get<std::vector<std::vector<double>>>();
+	std::vector<std::vector<std::string>> bids = orderData["bids"].get<std::vector<std::vector<std::string>>>();
+	std::vector<std::vector<std::string>> asks = orderData["asks"].get<std::vector<std::vector<std::string>>>();
 
-	for (const std::vector<double>& bid : bids) {
-		double price = bid[0];
-		double quantity = bid[1];
+	for (const std::vector<std::string>& bid : bids) {
+		double price = stod(bid[0]);
+		double quantity = stod(bid[1]);
 		bids_.insert({price, quantity});
 	}
-	for (const std::vector<double>& ask : asks) {
-		double price = ask[0];
-		double quantity = ask[1];
+	for (const std::vector<std::string>& ask : asks) {
+		double price = stod(ask[0]);
+		double quantity = stod(ask[1]);
 		asks_.insert({price, quantity});
 	}
+	snapshotLoaded_ = true;
 }
 
 void OrderBook::update()
 {
 	while (true) {
-		if (stopped_) return;
+		if (webSocket_->isInterrupted()) {
+			stop();
+			initOrderBook();
+			webSocket_->setInterrupted(false);
+			return;
+		}
 
 		std::optional<std::string> rawUpdate = webSocket_->readFromBuffer();
 		json updateData;
@@ -143,15 +144,16 @@ void OrderBook::update()
 			initOrderBook(); 
 			break;
 		}
+		
+		std::lock_guard<std::mutex> lock(obMutex_);
 
 		lastUpdateID_ = updateData["u"].get<uint64_t>();
-		std::vector<std::vector<double>> bids = updateData["b"].get<std::vector<std::vector<double>>>();
-		std::vector<std::vector<double>> asks = updateData["a"].get<std::vector<std::vector<double>>>();
+		std::vector<std::vector<std::string>> bids = updateData["b"].get<std::vector<std::vector<std::string>>>();
+		std::vector<std::vector<std::string>> asks = updateData["a"].get<std::vector<std::vector<std::string>>>();
 
-		std::lock_guard<std::mutex> lock(obMutex_);
-		for (std::vector<double>& bid : bids) {
-			double price = bid[0];
-			double quantity = bid[1];
+		for (std::vector<std::string>& bid : bids) {
+			double price = stod(bid[0]);
+			double quantity = stod(bid[1]);
 
 			if (!quantity) {
 				bids_.erase(price);
@@ -159,9 +161,9 @@ void OrderBook::update()
 				bids_[price] = quantity; 
 			}
 		}
-		for (std::vector<double> ask : asks) {
-			double price = ask[0];
-			double quantity = ask[1];
+		for (std::vector<std::string> ask : asks) {
+			double price = stod(ask[0]);
+			double quantity = stod(ask[1]);
 
 			if (!quantity) {
 				asks_.erase(price);
@@ -174,6 +176,12 @@ void OrderBook::update()
 
 void OrderBook::testRun()
 {
+	if (!snapshotLoaded_) {
+		std::cout << "Waiting for order book snapshot..." << std::endl;
+		std::this_thread::sleep_for(std::chrono::seconds(5));
+		return;
+	}
+
 	std::lock_guard<std::mutex> lock(obMutex_);
 	// std::cout << "\033[2J\033[1;1H"; // Clear screen
 
