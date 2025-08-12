@@ -1,5 +1,7 @@
 #include <map>
 #include <string>
+#include <thread>
+#include <mutex>
 #include <nlohmann/json.hpp>
 
 using json = nlohmann::json;
@@ -18,6 +20,7 @@ public:
 	void initOrderBook();
 	void stop();
 	void testLoop();
+	void requestRestart();
 
 	
 private:
@@ -30,8 +33,10 @@ private:
 	uint64_t lastUpdateID_;
 	std::map<double, double> bids_;
 	std::map<double, double> asks_;
-	bool stopped_; 
+	bool stopped_{false};
+	bool restartRequested_{false};
+	bool snapshotLoaded_{false};
 
 	std::mutex obMutex_;
-	bool snapshotLoaded_ = false;
+	std::thread updateThread_;
 };

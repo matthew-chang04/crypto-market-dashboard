@@ -4,9 +4,9 @@
 #include <thread>
 #include <iostream>
 
-using json = nlohmann::json;
+using json = nlohmann::json; 	
 
-OrderBook::OrderBook(Exchange ex, std::unique_ptr<WebSocketClient> webSocket) : ex_{ex}, webSocket_{std::move(webSocket)}, lastUpdateID_{}, bids_{}, asks_{}, stopped_{false}
+OrderBook::OrderBook(Exchange ex, std::unique_ptr<WebSocketClient> webSocket) : ex_{ex}, webSocket_{std::move(webSocket)}, lastUpdateID_{}, bids_{}, asks_{}
 {	
 
 }
@@ -82,20 +82,26 @@ void OrderBook::initOrderBook()
 	}
 
 	populateSnapshot(snapshot);
-	stopped_ = false;
-	std::thread orderParser(&OrderBook::update, this);
-	orderParser.detach();
+	updateThread_ = std::thread(&OrderBook::update, this);
 }
 
 void OrderBook::stop()
 {
+	{
 	std::lock_guard<std::mutex> lock(obMutex_);
+	stopped_ = true;
+	}
+
 	webSocket_->stop();
+	if (updateThread_.joinable()) {
+		updateThread_.join();
+	}
+
+	std::lock_guard<std::mutex> lock(obMutex_);
 	bids_.clear();
 	asks_.clear();
 	lastUpdateID_ = -1;
 	snapshotLoaded_ = false;
-	stopped_ = true;
 }
 
 void OrderBook::populateSnapshot(const json& orderData)
@@ -121,11 +127,14 @@ void OrderBook::populateSnapshot(const json& orderData)
 void OrderBook::update()
 {
 	while (true) {
+		{
+			std::lock_guard<std::mutex> lock(obMutex_);
+			if (stopped_) break;
+		}
+		
 		if (webSocket_->isInterrupted()) {
-			stop();
-			initOrderBook();
-			webSocket_->setInterrupted(false);
-			return;
+			restartRequested_ = true;
+			break;
 		}
 
 		std::optional<std::string> rawUpdate = webSocket_->readFromBuffer();
@@ -172,6 +181,10 @@ void OrderBook::update()
 			}
 		}
 	}
+
+	if (restartRequested_) {
+		requestRestart();
+	}
 }
 
 void OrderBook::testRun()
@@ -207,4 +220,10 @@ void OrderBook::testLoop()
 	while(true) {
 		testRun();
 	}
+}
+
+void OrderBook::requestRestart() {
+	std::lock_guard<std::mutex> lock(obMutex_);
+	stop();
+	initOrderBook();
 }
