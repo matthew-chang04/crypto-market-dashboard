@@ -19,14 +19,14 @@ public:
 	OrderBook(Exchange ex, std::unique_ptr<WebSocketClient> websocket);
 	void initOrderBook();
 	void stop();
-	void testLoop();
+	void run();
 	void requestRestart();
 
 	
 private:
 	void populateSnapshot(const json& data);
 	void update();
-	void testRun();
+	void prettyPrint();
  
 	Exchange ex_;	
 	std::unique_ptr<WebSocketClient> webSocket_;

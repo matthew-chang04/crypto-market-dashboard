@@ -9,6 +9,7 @@ add_executable(Exec
 	src/main.cpp
 	src/OrderBook.cpp
 	src/BinanceClient.cpp
+	src/ClientManager.cpp
 	)
 
 find_package(Boost REQUIRED COMPONENTS system)

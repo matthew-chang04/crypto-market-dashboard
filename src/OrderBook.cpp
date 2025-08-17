@@ -28,6 +28,7 @@ void OrderBook::initOrderBook()
 		webSocket_->connect();
 		webSocket_->subscribe(target);
 		webSocket_->run();
+		stopped_ = false;
 	} catch (const std::exception& e) {
 		std::cerr << "Error initializing WebSocket connection: " << e.what() << std::endl;
 		throw;
@@ -82,7 +83,10 @@ void OrderBook::initOrderBook()
 	}
 
 	populateSnapshot(snapshot);
-	updateThread_ = std::thread(&OrderBook::update, this);
+	if (!updateThread_.joinable()) {
+			updateThread_ = std::thread(&OrderBook::update, this);
+
+	}
 }
 
 void OrderBook::stop()
@@ -93,10 +97,7 @@ void OrderBook::stop()
 	}
 
 	webSocket_->stop();
-	if (updateThread_.joinable()) {
-		updateThread_.join();
-	}
-
+	
 	std::lock_guard<std::mutex> lock(obMutex_);
 	bids_.clear();
 	asks_.clear();
@@ -127,16 +128,7 @@ void OrderBook::populateSnapshot(const json& orderData)
 void OrderBook::update()
 {
 	while (true) {
-		{
-			std::lock_guard<std::mutex> lock(obMutex_);
-			if (stopped_) break;
-		}
-		
-		if (webSocket_->isInterrupted()) {
-			restartRequested_ = true;
-			break;
-		}
-
+	
 		std::optional<std::string> rawUpdate = webSocket_->readFromBuffer();
 		json updateData;
 		if (!rawUpdate.has_value()) {
@@ -149,8 +141,7 @@ void OrderBook::update()
 		if (updateData["u"].get<uint64_t>() < lastUpdateID_) {
 			continue;
 		} else if (updateData["U"].get<uint64_t>() > lastUpdateID_) { // Need to reset orderbook
-			stop();
-			initOrderBook(); 
+			requestRestart();
 			break;
 		}
 		
@@ -181,13 +172,9 @@ void OrderBook::update()
 			}
 		}
 	}
-
-	if (restartRequested_) {
-		requestRestart();
-	}
 }
 
-void OrderBook::testRun()
+void OrderBook::prettyPrint()
 {
 	if (!snapshotLoaded_) {
 		std::cout << "Waiting for order book snapshot..." << std::endl;
@@ -215,15 +202,20 @@ void OrderBook::testRun()
 	std::cout.flush();
 }
 
-void OrderBook::testLoop()
+void OrderBook::run()
 {
 	while(true) {
-		testRun();
+		if (webSocket_->isInterrupted()) {
+			if (updateThread_.joinable()) {
+				updateThread_.join();
+			}
+			
+			requestRestart();
+		}
 	}
 }
 
 void OrderBook::requestRestart() {
-	std::lock_guard<std::mutex> lock(obMutex_);
 	stop();
 	initOrderBook();
 }
