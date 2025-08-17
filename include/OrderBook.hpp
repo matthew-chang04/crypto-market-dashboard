@@ -6,13 +6,6 @@
 
 using json = nlohmann::json;
 
-enum class Exchange
-{
-	Binance,
-	Kraken,
-	Coinbase
-};
-
 class OrderBook
 {
 public:
