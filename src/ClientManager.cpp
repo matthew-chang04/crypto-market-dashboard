@@ -4,6 +4,12 @@
 #include <iostream>
 #include <stdexcept>
 
+namespace beast = boost::beast;   
+namespace http = beast::http;          
+namespace websocket = beast::websocket;
+namespace net = boost::asio;           
+using tcp = boost::asio::ip::tcp;     
+
 void ClientManager::run(int numThreads) {
     for (int i = 0; i < numThreads; ++i) {
         pool_.emplace_back([this]() {

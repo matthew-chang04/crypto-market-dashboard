@@ -4,6 +4,7 @@
 #include <err.h>
 #include <utility>
 
+
 // DEMO usage flow for continued development/testing
 
 int main(int argc, char * argv[]) // args: <exchange> <coin> <datatype>

@@ -6,11 +6,17 @@
 #include <memory>
 #include "WebSocketClient.hpp"
 
+namespace beast = boost::beast;   
+namespace http = beast::http;          
+namespace websocket = beast::websocket;
+namespace net = boost::asio;           
+using tcp = boost::asio::ip::tcp;     
 
 class ClientManager {
     public:
         ClientManager(): ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv12_client}, resolver_{ioc_} {
-
+            sslCtx_.set_options(boost::asio::ssl::context::default_workarounds);
+            sslCtx_.set_verify_mode(boost::asio::ssl::verify_peer);
         };
         
         template<typename Handler>
