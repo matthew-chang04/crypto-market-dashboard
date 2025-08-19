@@ -31,13 +31,15 @@ namespace websocket = beast::websocket;
 namespace net = boost::asio;           
 using tcp = boost::asio::ip::tcp;
 
-void WebSocketClient::start(std::string host, std::string port) {
-    
-    host_ = std::move(host);
-    port_ = std::move(port);
-    const int MAX_RETRIES = 10;
-    int retries = 0;
+void WebSocketClient::start() {  
     do_resolve();
+}
+
+void WebSocketClient::stop() {
+	beast::error_code ec;
+	if (ws_ && ws_->is_open()) {
+		ws_->async_close(websocket::close_code::normal, 
+	}
 }
 
 void WebSocketClient::do_resolve() {
@@ -56,7 +58,7 @@ void WebSocketClient::do_connect(tcp::resolver::results_type results) {
 		[self](beast::error_code ec, tcp::endpoint ep) {
 			if (ec) return self->retryStart(ec);
 
-			if (!SSL_set_tlsext_host_name(self->ws_->next_layer().native_handle(), self->host_.c_str()) {
+			if (!SSL_set_tlsext_host_name(self->ws_->next_layer().native_handle(), self->host_.c_str())) {
 				beast::error_code ec(static_cast<int>(::ERR_get_error()), net::error::get_ssl_category());
 				return self->retryStart(ec);
 			}
@@ -73,7 +75,7 @@ void WebSocketClient::do_ssl_handshake() {
 			req.set(http::field::user_agent, std::string(BOOST_BEAST_VERSION_STRING) + "websocket-client-coro");
 		}));
 
-	ws_->next_layer().async_handshake(ssl::stream_base::client, 
+	ws_->next_layer().async_handshake(net::ssl::stream_base::client, 
 		[self](beast::error_code ec) {
 			if (ec) return self->retryStart(ec);
 			return self->do_ws_handshake();

@@ -40,22 +40,22 @@ public:
 
 	virtual ~WebSocketClient() = default;
 
-	void start(std::string host, std::string port);	
-	void run();
+	void start();	
 	void stop();
+	void retryStart(beast::error_code ec);
 
 	void do_resolve();
 	void do_connect(tcp::resolver::results_type results);
 	void do_ssl_handshake();
 	void do_ws_handshake();
-
-	void retryStart(beast::error_code ec);
-
-	void subscribe(const std::string& target);
+	void virtual subscribe(const std::string& target);
 	void do_read();
 
 	bool isInterrupted() const { return interrupted_; }
 	void setInterrupted(bool value) { interrupted_ = value; }
+	void setHost(std::string host) { host_ = host; }
+	void setPort(std::string port) { port_ = port; }
+	void setHandler(std::function<void(const std::string&)> handler) { on_message = handler; }
 
 	std::function<void(std::string_view)> on_message;
 	
@@ -70,7 +70,6 @@ protected:
 	std::string host_;
 	std::string port_;
 	std::string target_;
-	
 
 	beast::flat_buffer readDump_;
 	

@@ -100,67 +100,27 @@ void BinanceClient::connect()
     }
 }
 
-void BinanceClient::subscribe(const std::string& target)
-{
+void BinanceClient::subscribe(const std::string& target) {
 	if (!beast::get_lowest_layer(*ws_).is_open()) {
-		throw std::invalid_argument("Cannot Subscribe using closed websocket");
+		std::cerr << "Cannot Connect to Closed WebSocket";
+		return;
 	}
 
-	try {
-		std::string subReq = fmt::format(R"({{ "method": "SUBSCRIBE", "params": [ "{}" ], "id" : 1 }})", target);
-		ws_->write(net::buffer(subReq));
-		
-		ws_->read(readDump_);
-		std::string payload = boost::beast::buffers_to_string(readDump_.data());
-		readDump_.consume(readDump_.size());
-
-		json response = json::parse(payload);
-		if (response["result"].is_null()) {
-			std::cout << "Subscription successful for target: " << target << std::endl;
-		}
-
-	} catch (const std::exception& ec) {
-		std::cerr << "WebSocket Subscribe Error: " << ec.what() << std::endl;
-		throw;
-	}
-
-}
-
-void BinanceClient::read()
-{
-	ws_->async_read(readDump_, [this](beast::error_code ec, size_t bytes) {
-		if (!ec) {
-			std::lock_guard<std::mutex> lock(mutex_);
-			std::string payload = boost::beast::buffers_to_string(readDump_.data());
-			readDump_.consume(readDump_.size());
-			buffer_.push(payload);
-			read();
-		} else {
-			std::cerr << "WebSocket Read Error: " << ec.message() << std::endl;
-			// in case of error, full reset
-			interrupted_ = true;
-		}
-	});
+	std::string subReq = fmt::format(R"({{ "method": "SUBSCRIBE", "params": [ "{}" ], "id" : 1 }})", target);
+	ws_->async_write(net::buffer(subReq));
+	std::shared_ptr<WebSocketClient> self = shared_from_this();
+	boost::asio::bind_executor(strand_, 
+		[self, target](beast::error_code ec, std::size_t bytes_written) {
+			if (ec) {
+				std::cerr << "Subscription to target: " << target << "failed." << std::endl;
+				return;
+			}
+			std::cout << "Subscription to " << target << "sucessful." << std::endl;
+			self->setInterrupted(false);
+			self->do_read();
+		});
 }
 	
-void BinanceClient::run()
-{
-	read();
-	std::thread([this]() {
-		ioc_.run();
-	}).detach();
-}
-
-std::optional<std::string> BinanceClient::readFromBuffer()
-{
-	std::lock_guard<std::mutex> lock(mutex_);
-	if (buffer_.empty()) {
-		return std::nullopt;
-	}
-	std::string payload = buffer_.front();
-	buffer_.pop();
-	return payload;
-}
 
 void BinanceClient::stop()
 {

@@ -22,6 +22,7 @@ class ClientManager {
         template<typename Handler>
         void addFeed(std::string host, std::string port, Handler handler);
         void run(int numThreads = 2);
+		void startFeeds();
 
     private:
         boost::asio::io_context ioc_;
