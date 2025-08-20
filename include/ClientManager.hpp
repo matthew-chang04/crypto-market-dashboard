@@ -20,7 +20,7 @@ class ClientManager {
         };
         
         template<typename Handler>
-        void addFeed(std::string host, std::string port, Handler handler);
+        void addFeed(std::string host, std::string port, std::string target, Handler handler);
         void run(int numThreads = 2);
 		void startFeeds();
 
@@ -30,4 +30,6 @@ class ClientManager {
         tcp::resolver resolver_;
         std::vector<std::thread> pool_;
         std::vector<std::shared_ptr<WebSocketClient>> clients_;
+        std::mutex mapMutex_;
+        std::unordered_map<std::shared_ptr<WebSocketClient>, std::queue<std::string>> clientMap_;
 };

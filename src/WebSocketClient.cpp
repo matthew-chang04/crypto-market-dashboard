@@ -38,9 +38,37 @@ void WebSocketClient::start() {
 void WebSocketClient::stop() {
 	beast::error_code ec;
 	if (ws_ && ws_->is_open()) {
+		std::shared_ptr<WebSocketClient> self = shared_from_this();
 		ws_->async_close(websocket::close_code::normal, 
+			[self](beast::error_code ec) {
+				if (ec == boost::asio::ssl::error::stream_truncated || ec == boost::asio::error::eof) {
+					ec.clear();
+				} else if (ec) {
+					std::cerr << "Error closing WebSocket: " << ec.message() << std::endl;
+				}
+
+				if (self->ws_ && self->ws_->next_layer().lowest_layer().is_open()) {
+					boost::system::error_code ec2;
+					self->ws_->next_layer().lowest_layer().close(ec2);
+					if (ec2) {
+						std::cerr << "Error closing TCP socket: " << ec2.message() << std::endl;
+					}
+					{
+						std::lock_guard<std::mutex> lock(self->mutex_);
+						self->setInterrupted(true);
+						self->readDump_.consume(self->readDump_.size());
+						std::cout << "WebSocket closed successfully." << std::endl;
+					}		
+				} else {
+					std::cout << "WebSocket already closed." << std::endl;
+				}
+			});
+	} else {
+		std::cout << "WebSocket already closed." << std::endl;
 	}
 }
+
+
 
 void WebSocketClient::do_resolve() {
     std::shared_ptr<WebSocketClient> self = shared_from_this();
@@ -49,7 +77,7 @@ void WebSocketClient::do_resolve() {
         [self](beast::error_code ec, tcp::resolver::results_type results) {
             if (ec) return self->retryStart(ec);
             self->do_connect(results);
-        })
+        });
 }
 
 void WebSocketClient::do_connect(tcp::resolver::results_type results) {
@@ -127,7 +155,19 @@ void WebSocketClient::do_read() {
 			if (ec) {
 				std::cerr << "WebSocket Read Error: " << ec.message() << std::endl;
 				self->setInterrupted(true);
+				self->reset();
+				return;
 			}
-
+			std::string msg = beast::buffers_to_string(self->readDump_.data());
+			if (self->on_message_) {
+				self->on_message_(msg);
+			}
+			self->readDump_.consume(self->readDump_.size());
+			self->do_read();
 		});
+}
+
+void WebSocketClient::reset() {
+	stop();
+	start();
 }

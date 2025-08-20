@@ -31,6 +31,7 @@ namespace http = beast::http;
 namespace websocket = beast::websocket;
 namespace net = boost::asio;           
 using tcp = boost::asio::ip::tcp;     
+using MessageHandler = std::function<void(std::string_view)>;
 
 class WebSocketClient: public std::enable_shared_from_this<WebSocketClient>
 {
@@ -40,26 +41,29 @@ public:
 
 	virtual ~WebSocketClient() = default;
 
-	void start();	
 	void stop();
 	void retryStart(beast::error_code ec);
 
+	void start();	
 	void do_resolve();
 	void do_connect(tcp::resolver::results_type results);
 	void do_ssl_handshake();
 	void do_ws_handshake();
 	void virtual subscribe(const std::string& target);
 	void do_read();
+	void reset();
 
 	bool isInterrupted() const { return interrupted_; }
 	void setInterrupted(bool value) { interrupted_ = value; }
 	void setHost(std::string host) { host_ = host; }
 	void setPort(std::string port) { port_ = port; }
-	void setHandler(std::function<void(const std::string&)> handler) { on_message = handler; }
+	void setTarget(std::string target) { target_ = target; }
+	void setHandler(MessageHandler handler) { on_message_ = std::move(handler); }
 
-	std::function<void(std::string_view)> on_message;
-	
+	std::string getTarget() const { return target_; }
+
 protected:
+	MessageHandler on_message_;
 	net::io_context& ioc_;
 	net::ssl::context& sslCtx_;
 	tcp::resolver& resolver_;
@@ -71,6 +75,7 @@ protected:
 	std::string port_;
 	std::string target_;
 
+	std::mutex mutex_;
 	beast::flat_buffer readDump_;
 	
 	bool interrupted_;
