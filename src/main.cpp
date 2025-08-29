@@ -1,5 +1,6 @@
 #include "BinanceClient.hpp"
 #include "OrderBook.hpp"
+#include "ClientManager.hpp"
 #include <iostream>
 #include <err.h>
 #include <utility>
@@ -16,16 +17,17 @@ int main(int argc, char * argv[]) // args: <exchange> <coin> <datatype>
 		return 0;
 	}
 
-	std::unique_ptr<WebSocketClient> exchangeSocket;
-	Exchange ex;
+	ClientManager clientManager;
+
 	if (!strcmp("binance", argv[1])) {
-		ex = Exchange::Binance;
-		exchangeSocket = std::make_unique<BinanceClient>();	
+		
 
 		if (!strcmp("orderbook", argv[3])) {
-			OrderBook ob{ex, std::move(exchangeSocket)};
-			ob.initOrderBook();
-			ob.testLoop();
+			clientManager.addFeed(BinanceClient::HOST, BinanceClient::PORT, std::string(argv[2]) + "@depth", [](const std::string& message) {
+				std::cout << "Received message: " << message << std::endl;
+			});
+			clientManager.run(2);
+			clientManager.startFeeds();
 		} else {
 			std::cout << "Issue with string recognition (orderbook)" << std::endl;
 		}

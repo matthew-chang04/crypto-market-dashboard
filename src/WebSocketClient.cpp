@@ -1,5 +1,4 @@
 #include "WebSocketClient.hpp"
-
 #include <nlohmann/json.hpp>
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>

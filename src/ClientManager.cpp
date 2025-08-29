@@ -35,7 +35,7 @@ void ClientManager::addFeed(std::string host, std::string port, std::string targ
 void ClientManager::startFeeds() {
 	for (auto client : clients_) {
 		client->start();
-		client->subscribe(client->getTarget()); // TODO: Replace "target" with actual target subscription string
+		client->subscribe(client->getTarget());
 	}
 }
 
@@ -46,8 +46,14 @@ void ClientManager::stopFeeds() {
 }
 
 void ClientManager::createOrderBook(const std::string& symbol) {
+    // 0. Set up orderbook (need to get snapshot from binance )
+    
     // 1. make connections to binance, kraken, coinbase
-
+    /*
+        handle functions will just read to json?? or maybe string?
+        - the client manager will deal with sending websocket responses (already normalized) to the orderbook buffer.
+        
+    */
     // 2. read from these to their respective queues
 
     // 3. 

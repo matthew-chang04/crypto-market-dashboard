@@ -9,23 +9,25 @@ using json = nlohmann::json;
 class OrderBook
 {
 public:
-	OrderBook(Exchange ex, std::unique_ptr<WebSocketClient> websocket);
+	OrderBook();
 	void initOrderBook();
 	void stop();
 	void run();
 	void requestRestart();
+
+	void writeUpdate(const std::string& update);
 
 	
 private:
 	void populateSnapshot(const json& data);
 	void update();
 	void prettyPrint();
- 
-	Exchange ex_;	
-	std::unique_ptr<WebSocketClient> webSocket_;
+
+
 	uint64_t lastUpdateID_;
 	std::map<double, double> bids_;
 	std::map<double, double> asks_;
+	
 	bool stopped_{false};
 	bool restartRequested_{false};
 	bool snapshotLoaded_{false};

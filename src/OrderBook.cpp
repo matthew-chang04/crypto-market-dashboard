@@ -6,41 +6,29 @@
 
 using json = nlohmann::json; 	
 
-OrderBook::OrderBook(Exchange ex, std::unique_ptr<WebSocketClient> webSocket) : ex_{ex}, webSocket_{std::move(webSocket)}, lastUpdateID_{}, bids_{}, asks_{}
+OrderBook::OrderBook() : lastUpdateID_{}, bids_{}, asks_{}
 {	
 
 }
 
+void OrderBook::run()
+{
+	
+	while(true) {
+		if () {
+			if (updateThread_.joinable()) {
+				updateThread_.join();
+			}
+			
+			requestRestart();
+		}
+	}
+}
 void OrderBook::initOrderBook()
 {
-	std::string target;
-	switch (ex_) {
-		case Exchange::Binance:
-			target = "btcusdt@depth";
-			break;
-		case Exchange::Kraken:
-			break;
-		case Exchange::Coinbase:
-			break;
-	}
-	// Set up WebSocket
-	try {
-		webSocket_->connect();
-		webSocket_->subscribe(target);
-		webSocket_->run();
-		stopped_ = false;
-	} catch (const std::exception& e) {
-		std::cerr << "Error initializing WebSocket connection: " << e.what() << std::endl;
-		throw;
-	}
 
 	// Get first orderbook snapshot
-	json snapshot = json::parse(BinanceClient::getOrderBookSnapshot(target));
- 
-	std::optional<std::string> rawUpdate;
-	do {
-		rawUpdate = webSocket_->readFromBuffer();
-	} while (!rawUpdate.has_value());
+	json snapshot = json::parse(BinanceClient::getOrderBookSnapshot(target));	
 
 	json update = json::parse(rawUpdate.value());
 	
@@ -125,6 +113,49 @@ void OrderBook::populateSnapshot(const json& orderData)
 	snapshotLoaded_ = true;
 }
 
+void OrderBook::writeUpdate(const std::string& update)
+{
+	std::lock_guard<std::mutex> lock(obMutex_);
+	if (!snapshotLoaded_) {
+		std::cerr << "Order book snapshot not loaded yet." << std::endl;
+		return;
+	}
+
+	json data = json::parse(update);
+	if (data["u"].get<uint64_t>() < lastUpdateID_) {
+		std::cerr << "Received outdated update." << std::endl;
+		return;
+	} else if (data["U"].get<uint64_t>() > lastUpdateID_) {
+		requestRestart();
+		return;
+	}
+
+	lastUpdateID_ = data["u"].get<uint64_t>();
+	std::vector<std::vector<std::string>> bids = data["b"].get<std::vector<std::vector<std::string>>>();
+	std::vector<std::vector<std::string>> asks = data["a"].get<std::vector<std::vector<std::string>>>();
+
+	for (const std::vector<std::string>& bid : bids) {
+		double price = stod(bid[0]);
+		double quantity = stod(bid[1]);
+
+		if (!quantity) {
+			bids_.erase(price);
+		} else {
+			bids_[price] = quantity; 
+		}
+	}
+	for (const std::vector<std::string>& ask : asks) {
+		double price = stod(ask[0]);
+		double quantity = stod(ask[1]);
+
+		if (!quantity) {
+			asks_.erase(price);
+		} else {
+			asks_[price] = quantity;
+		}
+	}
+}
+
 void OrderBook::update()
 {
 	while (true) {
@@ -200,19 +231,6 @@ void OrderBook::prettyPrint()
 	}
 
 	std::cout.flush();
-}
-
-void OrderBook::run()
-{
-	while(true) {
-		if (webSocket_->isInterrupted()) {
-			if (updateThread_.joinable()) {
-				updateThread_.join();
-			}
-			
-			requestRestart();
-		}
-	}
 }
 
 void OrderBook::requestRestart() {

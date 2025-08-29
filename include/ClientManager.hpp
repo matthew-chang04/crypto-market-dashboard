@@ -5,6 +5,7 @@
 #include <boost/asio.hpp>
 #include <memory>
 #include "WebSocketClient.hpp"
+#include "OrderBook.hpp"
 
 namespace beast = boost::beast;   
 namespace http = beast::http;          
@@ -23,6 +24,9 @@ class ClientManager {
         void addFeed(std::string host, std::string port, std::string target, Handler handler);
         void run(int numThreads = 2);
 		void startFeeds();
+        void stopFeeds();
+
+        void createOrderBook(const std::string& symbol);
 
     private:
         boost::asio::io_context ioc_;
@@ -32,4 +36,5 @@ class ClientManager {
         std::vector<std::shared_ptr<WebSocketClient>> clients_;
         std::mutex mapMutex_;
         std::unordered_map<std::shared_ptr<WebSocketClient>, std::queue<std::string>> clientMap_;
+        OrderBook ob_;
 };

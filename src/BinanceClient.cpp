@@ -37,68 +37,6 @@ using json = nlohmann::json;
 const std::string BinanceClient::HOST = "stream.binance.com";
 const std::string BinanceClient::PORT = "9443";
 
-void BinanceClient::connect()
-{
-    const int MAX_RETRIES = 10;
-    int retries = 0;
-    while (retries < MAX_RETRIES) {
-		std::cout << "Attempting to connect to " << host_ << ":" << port_ << " (Attempt " << retries + 1 << ")" << std::endl;
-        try {
-            if (ws_->is_open()) {
-                ws_->close(websocket::close_code::normal);
-            }
-
-			if (retries > 0) {
-				ws_ = std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc_, sslCtx_);
-
-				auto base_delay = std::min(1000 * (1 << (retries - 1)), 30000); 
-                auto jitter = std::rand() % 1000;  
-                std::this_thread::sleep_for(std::chrono::milliseconds(base_delay + jitter));
-			}
-            
-            auto const results = resolver_.resolve(host_, port_);
-            auto ep = net::connect(beast::get_lowest_layer(*ws_), results);
-
-			if (!SSL_set_tlsext_host_name(ws_->next_layer().native_handle(), host_.c_str())) {
-				beast::error_code ec(static_cast<int>(::ERR_get_error()), net::error::get_ssl_category());
-				throw beast::system_error(ec);
-			}
-
-            ws_->next_layer().set_verify_callback(net::ssl::host_name_verification(host_));
-            
-            std::string handshakeHost = host_ + ":" + std::to_string(ep.port());
-
-            ws_->next_layer().handshake(net::ssl::stream_base::client);
-
-            ws_->set_option(websocket::stream_base::timeout::suggested(
-                beast::role_type::client));
-
-            ws_->set_option(websocket::stream_base::decorator(
-                [](websocket::request_type& req) {
-                    req.set(http::field::user_agent,
-                        std::string(BOOST_BEAST_VERSION_STRING) + " websocket-client-coro");
-                }));
-
-            ws_->handshake(handshakeHost, "/stream");
-
-			std::cout << "Connected successfully to " << handshakeHost << std::endl;
-            return;
-
-        } catch (const boost::beast::system_error& be) {
-            std::cerr << "Beast error (attempt " << retries + 1 << "): " 
-                     << be.code() << ": " << be.what() << std::endl;
-            
-			retries++;
-            
-            if (retries == MAX_RETRIES) {
-                throw;
-            }            
-        } catch (const std::exception& e) {
-            std::cerr << "Standard error: " << e.what() << std::endl;
-            throw;
-        }
-    }
-}
 
 void BinanceClient::subscribe(const std::string& target) {
 	if (!beast::get_lowest_layer(*ws_).is_open()) {
@@ -119,44 +57,6 @@ void BinanceClient::subscribe(const std::string& target) {
 			self->setInterrupted(false);
 			self->do_read();
 		});
-}
-	
-
-void BinanceClient::stop()
-{
-	boost::system::error_code ec;
-
-	if (ws_ && ws_->is_open()) {
-		ws_->close(websocket::close_code::normal, ec);
-		if (ec == boost::asio::ssl::error::stream_truncated || ec == boost::asio::error::eof) {
-			ec.clear();
-		} else if (ec) {
-			std::cerr << "Error closing WebSocket: " << ec.message() << std::endl;
-		}
-	}
-
-	if (ws_ && ws_->next_layer().lowest_layer().is_open()) {
-		ws_->next_layer().shutdown();
-		if (ec == boost::asio::ssl::error::stream_truncated || ec == boost::asio::error::eof) {
-			ec.clear();
-		} else if (ec) {
-			std::cerr << "Error shutting down WebSocket: " << ec.message() << std::endl;
-		}
-	}
-
-	if (ws_ && ws_->next_layer().lowest_layer().is_open()) {
-		ws_->next_layer().lowest_layer().close(ec);
-		if (ec) {
-			std::cerr << "Error closing lowest layer: " << ec.message() << std::endl;
-		}
-	}
-	std::lock_guard<std::mutex> lock(mutex_);
-	readDump_.consume(readDump_.size());
-	while (!buffer_.empty()) {
-		buffer_.pop();
-	}
-	ioc_.stop();
-
 }
 
 // TODO: Implement some way that data gets passed to here properly (proper target format @BTCUSDT/limit=100
