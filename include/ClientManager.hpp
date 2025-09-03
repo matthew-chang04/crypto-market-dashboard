@@ -20,8 +20,7 @@ class ClientManager {
             sslCtx_.set_verify_mode(boost::asio::ssl::verify_peer);
         };
         
-        template<typename Handler>
-        void addFeed(std::string host, std::string port, std::string target, Handler handler);
+        void addFeed(std::string host, std::string port, std::string target, std::function<void(const std::string&)> handler);
         void run(int numThreads = 2);
 		void startFeeds();
         void stopFeeds();

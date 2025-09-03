@@ -31,12 +31,11 @@ namespace http = beast::http;
 namespace websocket = beast::websocket;
 namespace net = boost::asio;           
 using tcp = boost::asio::ip::tcp;     
-using MessageHandler = std::function<void(std::string_view)>;
 
 class WebSocketClient: public std::enable_shared_from_this<WebSocketClient>
 {
 public:
-	WebSocketClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver,  std::string target) : ioc_{ioc}, sslCtx_{sslCtx}, resolver_{resolver}, ws_{std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc, sslCtx)}, target_{target}, interrupted_{true} {}
+	WebSocketClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver,  std::string target) : ioc_{ioc}, sslCtx_{sslCtx}, resolver_{resolver}, ws_{std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc, sslCtx)}, target_{target}, interrupted_{true}, strand_{ioc.get_executor()} {}
 
 
 	virtual ~WebSocketClient() = default;
@@ -57,13 +56,12 @@ public:
 	void setInterrupted(bool value) { interrupted_ = value; }
 	void setHost(std::string host) { host_ = host; }
 	void setPort(std::string port) { port_ = port; }
-	void setTarget(std::string target) { target_ = target; }
-	void setHandler(MessageHandler handler) { on_message_ = std::move(handler); }
+	void setHandler(std::function<void(const std::string&)> handler) { on_message_ = std::move(handler); }
 
 	std::string getTarget() const { return target_; }
 
 protected:
-	MessageHandler on_message_;
+	std::function<void(const std::string&)> on_message_;
 	net::io_context& ioc_;
 	net::ssl::context& sslCtx_;
 	tcp::resolver& resolver_;

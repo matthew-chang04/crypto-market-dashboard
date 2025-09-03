@@ -22,13 +22,7 @@ public:
 	const static  std::string HOST;
 	const static std::string PORT;
 
-	BinanceClient() : WebSocketClient(HOST, PORT) {}
-	void connect() override;
 	void subscribe(const std::string& target) override;
-	std::optional<std::string> readFromBuffer() override;
-	void run() override;
-	void read() override;
-	void stop() override;
 
 	// Reads using REST API not WS stream
 	static std::string getOrderBookSnapshot(const std::string& target);

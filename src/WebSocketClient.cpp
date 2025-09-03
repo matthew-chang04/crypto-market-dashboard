@@ -126,27 +126,6 @@ void WebSocketClient::retryStart(beast::error_code ec) {
     self->do_resolve();
 }
 
-void WebSocketClient::subscribe(const std::string& target) {
-	if (!beast::get_lowest_layer(*ws_).is_open()) {
-		std::cerr << "Cannot Connect to Closed WebSocket";
-		return;
-	}
-
-	std::string subReq = fmt::format(R"({{ "method": "SUBSCRIBE", "params": [ "{}" ], "id" : 1 }})", target);
-	ws_->async_write(net::buffer(subReq));
-	std::shared_ptr<WebSocketClient> self = shared_from_this();
-	boost::asio::bind_executor(strand_, 
-		[self, target](beast::error_code ec, std::size_t bytes_written) {
-			if (ec) {
-				std::cerr << "Subscription to target: " << target << "failed." << std::endl;
-				return;
-			}
-			std::cout << "Subscription to " << target << "sucessful." << std::endl;
-			self->setInterrupted(false);
-			self->do_read();
-		});
-}
-
 void WebSocketClient::do_read() {
 	std::shared_ptr<WebSocketClient> self = shared_from_this();
 	ws_->async_read(readDump_,
