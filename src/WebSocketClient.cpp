@@ -89,6 +89,7 @@ void WebSocketClient::do_connect(tcp::resolver::results_type results) {
 				beast::error_code ec(static_cast<int>(::ERR_get_error()), net::error::get_ssl_category());
 				return self->retryStart(ec);
 			}
+			self->do_ssl_handshake();
 		});
 }
 
@@ -116,7 +117,7 @@ void WebSocketClient::do_ws_handshake() {
 			if (ec) return self->retryStart(ec);
 			std::cout << "Sucessfully connected to" << self->host_ << std::endl;
 
-			self->subscribe(self->target_);
+			self->subscribe();
 		});
 }
 
@@ -148,4 +149,14 @@ void WebSocketClient::do_read() {
 void WebSocketClient::reset() {
 	stop();
 	start();
+}
+
+void WebSocketClient::subscribe() {
+	if (target_ == "orderbook") {
+		subscribe_orderbook(normalize_symbol(symbol_));
+	} else if (target_ == "ticker") {
+		subscribe_ticker(normalize_symbol(symbol_), "1m"); 
+	} else {
+		std::cerr << "Unknown subscription target: " << target_ << std::endl;
+	}
 }

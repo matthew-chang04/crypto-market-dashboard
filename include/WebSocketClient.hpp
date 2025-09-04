@@ -1,4 +1,5 @@
 #pragma once
+#include "ExchangeInterface.hpp"
 #include <nlohmann/json.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -32,10 +33,10 @@ namespace websocket = beast::websocket;
 namespace net = boost::asio;           
 using tcp = boost::asio::ip::tcp;     
 
-class WebSocketClient: public std::enable_shared_from_this<WebSocketClient>
+class WebSocketClient: public std::enable_shared_from_this<WebSocketClient>, public ExchangeInterface
 {
 public:
-	WebSocketClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver,  std::string target) : ioc_{ioc}, sslCtx_{sslCtx}, resolver_{resolver}, ws_{std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc, sslCtx)}, target_{target}, interrupted_{true}, strand_{ioc.get_executor()} {}
+	WebSocketClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver,  std::string target, std::string symbol) : ioc_{ioc}, sslCtx_{sslCtx}, resolver_{resolver}, ws_{std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc, sslCtx)}, target_{target}, symbol_{symbol}, interrupted_{true}, strand_{ioc.get_executor()} {}
 
 
 	virtual ~WebSocketClient() = default;
@@ -48,7 +49,7 @@ public:
 	void do_connect(tcp::resolver::results_type results);
 	void do_ssl_handshake();
 	void do_ws_handshake();
-	void virtual subscribe(const std::string& target);
+	void subscribe();
 	void do_read();
 	void reset();
 
@@ -72,6 +73,7 @@ protected:
 	std::string host_;
 	std::string port_;
 	std::string target_;
+	std::string symbol_;
 
 	std::mutex mutex_;
 	beast::flat_buffer readDump_;
