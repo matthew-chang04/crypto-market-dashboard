@@ -37,29 +37,40 @@ using json = nlohmann::json;
 const std::string BinanceClient::HOST = "stream.binance.com";
 const std::string BinanceClient::PORT = "9443";
 
+std::string BinanceClient::normalize_symbol(const std::string& symbol) {
+	std::string suffix = "usdt";
+	std::string normalized = symbol + suffix;
+	return normalized;
+}
 
-void BinanceClient::subscribe(const std::string& target) {
+void BinanceClient::subscribe_orderbook(const std::string& symbol) {
 	if (!beast::get_lowest_layer(*ws_).is_open()) {
-		std::cerr << "Cannot Connect to Closed WebSocket";
+		std::cerr << "Cannot subscribe using to closed WebSocket";
 		return;
 	}
 
-	std::string subReq = fmt::format(R"({{ "method": "SUBSCRIBE", "params": [ "{}" ], "id" : 1 }})", target);
+	std::string subReq = fmt::format(R"({{
+		"method": "SUBSCRIBE",
+		"params": ["{}@depth"],
+		"id": 1
+	}})", symbol)
+
 	ws_->async_write(net::buffer(subReq));
-	std::shared_ptr<WebSocketClient> self = shared_from_this();
-	boost::asio::bind_executor(strand_, 
-		[self, target](beast::error_code ec, std::size_t bytes_written) {
-			if (ec) {
-				std::cerr << "Subscription to target: " << target << "failed." << std::endl;
-				return;
-			}
-			std::cout << "Subscription to " << target << "sucessful." << std::endl;
-			self->setInterrupted(false);
-			self->do_read();
-		});
 }
 
-// TODO: Implement some way that data gets passed to here properly (proper target format @BTCUSDT/limit=100
+void BinanceClient::subscribe_ticker(const std::string& symbol) {
+	if (!beast::get_lowest_layer(*ws_).is_open()) {
+		std::cerr << "Cannot subscribe to closed WebSocket";
+		return;
+	}
+
+	std::string subReq = fmt::format(R"({{
+		"method": "SUBSCRIBE",
+		"params": ["{}@ //
+	}})", symbol); // TODO FIGURE OUT WHAT THE NAME OF THIS IS
+}
+
+
 std::string BinanceClient::getOrderBookSnapshot(const std::string& target)
 {
 	try {

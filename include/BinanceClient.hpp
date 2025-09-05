@@ -13,16 +13,26 @@
 #include <boost/asio/ssl/stream.hpp>
 #include <boost/beast/ssl.hpp>
 #include "WebSocketClient.hpp"
+#include "ExchangeInterface.hpp"
 
 namespace beast = boost::beast;
 
-class BinanceClient : public WebSocketClient
+class BinanceClient : public WebSocketClient, 
 {
 public:
 	const static  std::string HOST;
 	const static std::string PORT;
 
-	void subscribe(const std::string& target) override;
+	BinanceClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol)
+		: WebSocketClient(ioc, sslCtx, resolver, target, symbol) {
+			setHost(HOST);
+			setPort(PORT);
+		}
+
+	void subscribe_orderbook(const std::string& symbol) override;
+	void subscribe_ticker(const std::string& symbol) override;
+	std::string normalize_symbol(const std::string& symbol) override;
+
 
 	// Reads using REST API not WS stream
 	static std::string getOrderBookSnapshot(const std::string& target);
