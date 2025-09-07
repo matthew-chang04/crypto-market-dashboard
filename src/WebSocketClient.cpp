@@ -155,7 +155,7 @@ void WebSocketClient::subscribe() {
 	if (target_ == "orderbook") {
 		subscribe_orderbook(normalize_symbol(symbol_));
 	} else if (target_ == "ticker") {
-		subscribe_ticker(normalize_symbol(symbol_), "1m"); 
+		subscribe_ticker(normalize_symbol(symbol_)); 
 	} else {
 		std::cerr << "Unknown subscription target: " << target_ << std::endl;
 	}

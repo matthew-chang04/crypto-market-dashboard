@@ -33,7 +33,7 @@ void ClientManager::addFeed(std::string host, std::string port, std::string targ
 void ClientManager::startFeeds() {
 	for (auto client : clients_) {
 		client->start();
-		client->subscribe(client->getTarget());
+		client->subscribe();
 	}
 }
 

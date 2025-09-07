@@ -30,7 +30,7 @@ void CoinbaseClient::subscribe_orderbook(const std::string& symbol) {
 
 }
 
-void CoinbaseClient::subscribe_ticker(const std::string& symbol, const std::string& interval) {
+void CoinbaseClient::subscribe_ticker(const std::string& symbol) {
     if (!beast::get_lowest_layer(*ws_).is_open()) {
         std::cerr << "Cannot Connect to Closed WebSocket";
         return;

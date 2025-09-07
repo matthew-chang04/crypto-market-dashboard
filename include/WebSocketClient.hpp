@@ -36,7 +36,7 @@ using tcp = boost::asio::ip::tcp;
 class WebSocketClient: public std::enable_shared_from_this<WebSocketClient>, public ExchangeInterface
 {
 public:
-	WebSocketClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver,  std::string target, std::string symbol) : ioc_{ioc}, sslCtx_{sslCtx}, resolver_{resolver}, ws_{std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc, sslCtx)}, target_{target}, symbol_{symbol}, interrupted_{true}, strand_{ioc.get_executor()} {}
+	WebSocketClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver,  std::string target, std::string symbol) : ioc_{ioc}, sslCtx_{sslCtx}, resolver_{resolver}, ws_{std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc, sslCtx)}, target_{target}, symbol_{normalize_symbol(symbol)}, interrupted_{true}, strand_{ioc.get_executor()} {}
 
 
 	virtual ~WebSocketClient() = default;
@@ -73,7 +73,6 @@ protected:
 	std::string host_;
 	std::string port_;
 	std::string target_;
-	std::string symbol_;
 
 	std::mutex mutex_;
 	beast::flat_buffer readDump_;
