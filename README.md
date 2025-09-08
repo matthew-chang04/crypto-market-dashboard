@@ -2,8 +2,8 @@
 This project displays **Cryptocurrency market data** with supplementary insights from **options data**
 
 It involves:
-* [WebSocket Client Manager](websocket-client-manager) - To get real-time financial data from different Cryptocurrency exchanges
-* [Data Manager](data-manager) - To parse JSON information obtained from WebSockets for in-depth analysis
+* [WebSocket Client Manager](#websocket-client-manager) - To get real-time financial data from different Cryptocurrency exchanges
+* [Data Manager](#data-manager) - To parse JSON information obtained from WebSockets for in-depth analysis
 * Data Visualisation - Displays Coin information trade information, orderbooks, and Option insights (ie: Implied Volatility Surface).
 
 <img src="https://github.com/matthew-chang04/crypto-market-dashboard/blob/main/resources/IVSurvace" alt="Implied Volatility Heatmap" width="50%" />
