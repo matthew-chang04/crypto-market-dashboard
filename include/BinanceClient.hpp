@@ -17,22 +17,23 @@
 
 namespace beast = boost::beast;
 
-class BinanceClient : public WebSocketClient, 
+class BinanceClient : public WebSocketClient
 {
 public:
 	const static  std::string HOST;
 	const static std::string PORT;
 
 	BinanceClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol)
-		: WebSocketClient(ioc, sslCtx, resolver, target, symbol) {
+		: WebSocketClient(ioc, sslCtx, resolver, target, symbol, *(new MarketDataManager())) {
 			setHost(HOST);
 			setPort(PORT);
 		}
 
-	void subscribe_orderbook(const std::string& symbol) override;
-	void subscribe_ticker(const std::string& symbol) override;
+	void subscribe_orderbook() override;
+	void subscribe_ticker() override;
 	std::string normalize_symbol(const std::string& symbol) override;
-
+	void ticker_handler(const std::string& msg) override;
+	void orderbook_handler(const std::string& msg) override;
 
 	// Reads using REST API not WS stream
 	static std::string getOrderBookSnapshot(const std::string& target);

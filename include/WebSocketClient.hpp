@@ -1,4 +1,5 @@
 #pragma once
+#include "DataManager.hpp"
 #include "ExchangeInterface.hpp"
 #include <nlohmann/json.hpp>
 #include <boost/asio/strand.hpp>
@@ -36,7 +37,7 @@ using tcp = boost::asio::ip::tcp;
 class WebSocketClient: public std::enable_shared_from_this<WebSocketClient>, public ExchangeInterface
 {
 public:
-	WebSocketClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver,  std::string target, std::string symbol) : ioc_{ioc}, sslCtx_{sslCtx}, resolver_{resolver}, ws_{std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc, sslCtx)}, target_{target}, symbol_{normalize_symbol(symbol)}, interrupted_{true}, strand_{ioc.get_executor()} {}
+	WebSocketClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver,  std::string target, std::string symbol, MarketDataManager& dataManager) : ioc_{ioc}, sslCtx_{sslCtx}, resolver_{resolver}, ws_{std::make_unique<websocket::stream<net::ssl::stream<tcp::socket>>>(ioc, sslCtx)}, target_{target}, symbol_{symbol}, dataManager_{dataManager}, interrupted_{true}, strand_{ioc.get_executor()} {}
 
 
 	virtual ~WebSocketClient() = default;
@@ -60,6 +61,7 @@ public:
 	void setHandler(std::function<void(const std::string&)> handler) { on_message_ = std::move(handler); }
 
 	std::string getTarget() const { return target_; }
+	std::string getSymbol() const { return symbol_; }
 
 protected:
 	std::function<void(const std::string&)> on_message_;
@@ -73,6 +75,8 @@ protected:
 	std::string host_;
 	std::string port_;
 	std::string target_;
+	std::string symbol_;
+	MarketDataManager& dataManager_;
 
 	std::mutex mutex_;
 	beast::flat_buffer readDump_;

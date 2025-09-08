@@ -13,7 +13,9 @@ public:
             setPort(PORT);
         }
     
-    std::stirng normalize_symbol(const std::string& symbol) override;
+    std::string normalize_symbol(const std::string& symbol) override;
     void subscribe_orderbook() override;
     void subscribe_ticker() override;
+
+    std::string orderbookSetup();
 };

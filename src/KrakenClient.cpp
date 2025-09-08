@@ -28,7 +28,7 @@ void KrakenClient::subscribe_orderbook() {
             "channel": "book",
             "symbol": ["{}"]
             }
-        }))", symbol_);
+        }))", normalize_symbol(symbol_));
     
     std::shared_ptr<WebSocketClient> self = shared_from_this();
     ws_->async_write(net::buffer(subReq), 
@@ -53,7 +53,7 @@ void KrakenClient::subscribe_ticker() {
 }
 
 std::string KrakenClient::orderbookSetup() {
-    std::string payload = readDump_.data();
+    beast::basic_flat_buffer payload = readDump_.data();
     readDump_.consume(readDump_.size());
     json data = json::parse(payload);
 }

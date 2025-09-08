@@ -14,7 +14,7 @@ std::string CoinbaseClient::normalize_symbol(const std::string& symbol) {
     return normalized;
 }
 
-void CoinbaseClient::subscribe_orderbook(const std::string& symbol) {
+void CoinbaseClient::subscribe_orderbook() {
     if (!beast::get_lowest_layer(*ws_).is_open()) {
         std::cerr << "Cannot Connect to Closed WebSocket";
         return;
@@ -24,13 +24,13 @@ void CoinbaseClient::subscribe_orderbook(const std::string& symbol) {
         "type": "subscribe", 
         "channels":["level2"], 
         "product_ids": ["{}"], 
-        }))", symbol);
+        }))", symbol_);
 
     ws_->async_write(net::buffer(subReq));
 
 }
 
-void CoinbaseClient::subscribe_ticker(const std::string& symbol) {
+void CoinbaseClient::subscribe_ticker() {
     if (!beast::get_lowest_layer(*ws_).is_open()) {
         std::cerr << "Cannot Connect to Closed WebSocket";
         return;
@@ -40,7 +40,7 @@ void CoinbaseClient::subscribe_ticker(const std::string& symbol) {
         "type": "subscribe", 
         "product_ids": ["{}"],
         "channels": ["ticker"] 
-        }))", symbol);
+        }))", symbol_);
 
     ws_->async_write(net::buffer(subReq));
 }

@@ -43,7 +43,7 @@ std::string BinanceClient::normalize_symbol(const std::string& symbol) {
 	return normalized;
 }
 
-void BinanceClient::subscribe_orderbook(const std::string& symbol) {
+void BinanceClient::subscribe_orderbook() {
 	if (!beast::get_lowest_layer(*ws_).is_open()) {
 		std::cerr << "Cannot subscribe using to closed WebSocket";
 		return;
@@ -53,12 +53,12 @@ void BinanceClient::subscribe_orderbook(const std::string& symbol) {
 		"method": "SUBSCRIBE",
 		"params": ["{}@depth"],
 		"id": 1
-	}})", symbol)
+	}})", symbol_);
 
 	ws_->async_write(net::buffer(subReq));
 }
 
-void BinanceClient::subscribe_ticker(const std::string& symbol) {
+void BinanceClient::subscribe_ticker() {
 	if (!beast::get_lowest_layer(*ws_).is_open()) {
 		std::cerr << "Cannot subscribe to closed WebSocket";
 		return;
@@ -66,10 +66,35 @@ void BinanceClient::subscribe_ticker(const std::string& symbol) {
 
 	std::string subReq = fmt::format(R"({{
 		"method": "SUBSCRIBE",
-		"params": ["{}@ //
-	}})", symbol); // TODO FIGURE OUT WHAT THE NAME OF THIS IS
+		"params": ["{}@aggTrade"]
+	}})", symbol_);
+
+	ws_->async_write(net::buffer(subReq));
 }
 
+void BinanceClient::ticker_handler(const std::string& msg) {
+	try {
+		json data = json::parse(msg);
+		double price = std::stod(data["p"].get<std::string>());
+		double quantity = std::stod(data["q"].get<std::string>());
+		std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
+
+		SpotTick tick{price, quantity, timestamp};
+		dataManager_.addSpotTick(tick);
+
+	} catch (const std::exception& e) {
+		std::cerr << "Error in ticker_handler: " << e.what() << std::endl;
+	}
+}
+
+void BinanceClient::orderbook_handler(const std::string& msg) {
+	try {
+		json data = json::parse(msg);
+		// TODO: Process order book data and update OrderBook instance
+	} catch (const std::exception& e) {
+		std::cerr << "Error in orderbook_handler: " << e.what() << std::endl;
+	}
+}
 
 std::string BinanceClient::getOrderBookSnapshot(const std::string& target)
 {
@@ -105,3 +130,5 @@ std::string BinanceClient::getOrderBookSnapshot(const std::string& target)
 		return "";
 	}	
 }
+
+
