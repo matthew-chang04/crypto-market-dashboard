@@ -71,7 +71,6 @@ protected:
 	std::unique_ptr<websocket::stream<net::ssl::stream<tcp::socket>>> ws_;
 	net::strand<net::io_context::executor_type> strand_;
 
-	// TODO: Implement preset host, port and target values for Binance, Kraken, Coinbase
 	std::string host_;
 	std::string port_;
 	std::string target_;
