@@ -149,25 +149,18 @@ void DeribitClient::ticker_handler(const std::string& msg) {
     try {
         auto j = json::parse(msg);
 
-        if (j.contains("method") && j["method"] == "subscription") {
-            auto params = j["params"];
-            std::string channel = params["channel"];
-            auto data = params["data"];
-
-            if (channel.rfind("ticker.", 0) == 0) { // starts with "ticker."
-                std::string symbol = channel.substr(7); // remove "ticker."
-
-                double price = data["last_price"].get<double>();
-                double quantity = data["last_quantity"].get<double>();
-                auto timestamp = std::chrono::system_clock::now();
-
-                SpotTick tick{price, quantity, timestamp};
-                dataManager_.addSpotTick(tick);
-            }
-        } else if (j.contains("error")) {
-            std::cerr << "Error from Deribit: " << j["error"]["message"] << std::endl;
+        /*
+        JSON Format for a ticker message from deribit:
+        
+        {
+        "data": {
+            ...
+            contains ask_iv, bid_iv, greeks in their own object, best ask, best bid, etc (see deribit docs)
         }
+        }*/
+
     } catch (const std::exception& e) {
-        std::cerr << "Failed to parse ticker message: " << e.what() << std::endl;
+        std::cerr << "JSON parse error: " << e.what() << std::endl;
+        return;
     }
 }
