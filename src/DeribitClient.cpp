@@ -94,6 +94,7 @@ std::string DeribitClient::format_date(std::tm tm) {
 
 std::string DeribitClient::create_symbol(const std::string& base, const std::string& expiry, double strike) {
     std::string symbol = fmt::format("{}-{}-{}-C", base, expiry, static_cast<int>(strike));
+    // example: BTC-30JUN23-30000-C
     return symbol;
 }
 
@@ -158,6 +159,9 @@ void DeribitClient::ticker_handler(const std::string& msg) {
             contains ask_iv, bid_iv, greeks in their own object, best ask, best bid, etc (see deribit docs)
         }
         }*/
+      // https://test.deribit.com/api_console/?method=%2Fprivate%2Fsubscribe&channels=ticker.%7Binstrument_name%7D.%7Binterval%7D
+        // THIS is the testing suite for the websocket to deribit, play ariund to see the json format and make sure the request is correct
+        j["data"]
 
     } catch (const std::exception& e) {
         std::cerr << "JSON parse error: " << e.what() << std::endl;
