@@ -161,7 +161,7 @@ void DeribitClient::ticker_handler(const std::string& msg) {
         }*/
       // https://test.deribit.com/api_console/?method=%2Fprivate%2Fsubscribe&channels=ticker.%7Binstrument_name%7D.%7Binterval%7D
         // THIS is the testing suite for the websocket to deribit, play ariund to see the json format and make sure the request is correct
-        j["data"]
+        j["data"];
 
     } catch (const std::exception& e) {
         std::cerr << "JSON parse error: " << e.what() << std::endl;
