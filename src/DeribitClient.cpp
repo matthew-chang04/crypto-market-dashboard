@@ -138,7 +138,9 @@ void DeribitClient::unsubscribe_ticker(const std::string& symbol) {
         "id": {},
         "method": "public/unsubscribe",
         "params": {{
-            "channels": ["ticker.{}"]
+            "channels": [
+                0 : "ticker.{}.agg2"
+            ]
         }}
     }})", nextId_++, symbol);
 
@@ -153,15 +155,14 @@ void DeribitClient::ticker_handler(const std::string& msg) {
         /*
         JSON Format for a ticker message from deribit:
         
-        {
-        "data": {
-            ...
-            contains ask_iv, bid_iv, greeks in their own object, best ask, best bid, etc (see deribit docs)
-        }
+        
+        
         }*/
       // https://test.deribit.com/api_console/?method=%2Fprivate%2Fsubscribe&channels=ticker.%7Binstrument_name%7D.%7Binterval%7D
         // THIS is the testing suite for the websocket to deribit, play ariund to see the json format and make sure the request is correct
-        j["data"];
+
+        double last_price = j["params"]["data"]["last_price"].get<double>();
+        
 
     } catch (const std::exception& e) {
         std::cerr << "JSON parse error: " << e.what() << std::endl;

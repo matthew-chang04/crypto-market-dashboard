@@ -15,7 +15,8 @@ struct OptionKey {
     std::string expiry; // Format: "DDMMMYY"
     double strike;
     bool isCall;
-
+    
+    // We could just standardize the options keys to be the same as deribit, since this is our only options source
     bool operator==(const OptionKey& other) const;
 };
 
