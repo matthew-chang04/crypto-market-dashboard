@@ -38,33 +38,26 @@ const std::string DeribitClient::PORT = "";
 DeribitClient::DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol, MarketDataManager& dataManager)
         : WebSocketClient(ioc, sslCtx, resolver, target, symbol, dataManager) {
             setHost(HOST);
-            setPort(PORT);
+            setPort(PORT);     
             
-            auto now = system_clock::now();
-            std::time_t t = system_clock::to_time_t(now);
+            auto now = floor<std::chrono::days>(system_clock::now());   
+            std::chrono::sys_days day = time_point_cast<std::chrono::days>(now);
 
-            std::tm tm_now;
-#if defined(_WIN32) || defined(_WIN64)
-            localtime_s(&tm_now, &t);
-#else
-            localtime_r(&t, &tm_now);
-#endif
-            int businessDaysCount = 0;
-            while (businessDaysCount < 10) {
-                
-                if (tm_now.tm_wday != 0 && tm_now.tm_wday != 6) { // 0=Sunday,6=Saturday
-                    std::cout << format_date(tm_now) << std::endl;
-                    ++businessDaysCount;
-                }
+            std::vector<std::string> trackedExpiries;
+        int businessDaysCount = 0;
 
-                t += 24*60*60; // add one day in seconds
-#if defined(_WIN32) || defined(_WIN64)
-                localtime_s(&tm_now, &t);
-#else
-                localtime_r(&t, &tm_now);
-#endif
+        while (businessDaysCount < 10) {
+            // Get weekday in UTC
+            weekday wd{day};
+            if (wd != Sunday && wd != Saturday) {
+                trackedExpiries.push_back(format_date(day));
+                ++businessDaysCount;
             }
+            day += days{1};
         }
+        }
+
+        
 
 
 std::string DeribitClient::normalize_symbol(const std::string& symbol) {
@@ -75,21 +68,14 @@ std::string DeribitClient::normalize_symbol(const std::string& symbol) {
     return normalized; 
 }
 
-std::string DeribitClient::format_date(std::tm tm) {
+std::string DeribitClient::format_date(std::chrono::sys_days day) {
 
-    // Format as DDMMMYY
-    std::ostringstream oss;
-    oss << std::setw(2) << std::setfill('0') << tm.tm_mday; // DD
+    // Format date as DDMMMYY (e.g., 30JUN23)
+    std::string date = std::format("{:%d%b%y}", day);
 
-    static const char* months[] = {
-        "JAN","FEB","MAR","APR","MAY","JUN",
-        "JUL","AUG","SEP","OCT","NOV","DEC"
-    };
-    oss << months[tm.tm_mon]; // MMM
-
-    oss << std::setw(2) << (tm.tm_year % 100); // YY
-
-    return oss.str();
+    std::transform(date.begin() + 2, date.begin() + 5, date.begin() + 2,
+                   [](unsigned char c){ return std::toupper(c); });
+    return date;
 }
 
 std::string DeribitClient::create_symbol(const std::string& base, const std::string& expiry, double strike) {
@@ -162,7 +148,10 @@ void DeribitClient::ticker_handler(const std::string& msg) {
         // THIS is the testing suite for the websocket to deribit, play ariund to see the json format and make sure the request is correct
 
         double last_price = j["params"]["data"]["last_price"].get<double>();
-        
+        double last_quantity = j["params"]["data"]["last_quantity"].get<double>();
+        double iv = j["params"]["data"]["mark_iv"].get<double>();
+        std::string name = j["params"]["data"]["instrument_name"].get<std::string>();
+        dataManager_.addOptionTick(name, OptionTick{last_price, last_quantity, iv, std::chrono::system_clock::now()});
 
     } catch (const std::exception& e) {
         std::cerr << "JSON parse error: " << e.what() << std::endl;

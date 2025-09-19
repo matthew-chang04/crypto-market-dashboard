@@ -15,7 +15,7 @@ public:
     DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol, MarketDataManager& dataManager);
 
     std::string normalize_symbol(const std::string& symbol) override;
-    std::string format_date(std::tm tm);
+    std::string format_date(std::chrono::sys_days day);
     std::string create_symbol(const std::string& base, const std::string& expiry, double strike);
 
     void subscribe_ticker(const std::string& symbol);

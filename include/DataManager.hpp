@@ -11,14 +11,6 @@ struct SpotTick {
     std::chrono::system_clock::time_point timestamp;
 };
 
-struct OptionKey {
-    std::string expiry; // Format: "DDMMMYY"
-    double strike;
-    bool isCall;
-    
-    // We could just standardize the options keys to be the same as deribit, since this is our only options source
-    bool operator==(const OptionKey& other) const;
-};
 
 struct OptionTick {
     double price;
@@ -33,7 +25,7 @@ class MarketDataManager {
     SpotTick latestSpotTick_;
     std::mutex spotMutex_;
 
-    std::unordered_map<OptionKey, OptionTick> optionTicks_;
+    std::unordered_map<std::string, OptionTick> optionTicks_;
     std::mutex optionMutex_;
 
     OrderBook ob_;
@@ -44,8 +36,8 @@ public:
     void addSpotTick(const SpotTick& tick);
     SpotTick getLatestSpotTick();
 
-    void addOptionTick(const OptionKey& key, const OptionTick& tick);
-    OptionTick getOptionTick(const OptionKey& key);
+    void addOptionTick(const std::string& key, const OptionTick& tick);
+    OptionTick getOptionTick(const std::string& key);
 
     void startOrderBook();
 };
