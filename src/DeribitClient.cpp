@@ -73,8 +73,9 @@ std::string DeribitClient::format_date(std::chrono::sys_days day) {
     // Format date as DDMMMYY (e.g., 30JUN23)
     std::string date = std::format("{:%d%b%y}", day);
 
-    std::transform(date.begin() + 2, date.begin() + 5, date.begin() + 2,
-                   [](unsigned char c){ return std::toupper(c); });
+    for (size_t i = 2; i < 5; ++i) {
+        date[i] = std::toupper(date[i]);
+    }
     return date;
 }
 
