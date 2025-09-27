@@ -9,7 +9,7 @@ std::string CoinbaseClient::normalize_symbol(const std::string& symbol) {
     std::string normalized;
     for (char ch : symbol) {
         normalized += std::toupper(ch);
-    }
+    } 
     normalized += "-USD";
     return normalized;
 }
