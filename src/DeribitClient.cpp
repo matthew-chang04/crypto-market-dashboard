@@ -43,35 +43,29 @@ DeribitClient::DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tc
             auto now = floor<std::chrono::days>(system_clock::now());   
             std::chrono::sys_days day = time_point_cast<std::chrono::days>(now);
 
-            std::vector<std::string> trackedExpiries;
         int businessDaysCount = 0;
 
         while (businessDaysCount < 10) {
             // Get weekday in UTC
             weekday wd{day};
             if (wd != Sunday && wd != Saturday) {
-                trackedExpiries.push_back(format_date(day));
+                trackedExpiries_.push_back(format_date(day));
                 ++businessDaysCount;
             }
             day += days{1};
         }
-        }
-
-        
-
+ }
 
 std::string DeribitClient::normalize_symbol(const std::string& symbol) {
-    std::string normalized;
-    for (char ch : symbol) {
-        normalized += std::toupper(ch);
-    }
-    return normalized; 
+    std::string normalized(symbol);
+    std::transform(normalized.begin(), normalized.end(), normalized.begin(), ::toupper);
+    return normalized;
 }
 
 std::string DeribitClient::format_date(std::chrono::sys_days day) {
 
     // Format date as DDMMMYY (e.g., 30JUN23)
-    std::string date = std::format("{:%d%b%y}", day);
+     std::string date = std::format("{:%d%b%y}", day);
 
     for (size_t i = 2; i < 5; ++i) {
         date[i] = std::toupper(date[i]);
@@ -79,8 +73,8 @@ std::string DeribitClient::format_date(std::chrono::sys_days day) {
     return date;
 }
 
-std::string DeribitClient::create_symbol(const std::string& base, const std::string& expiry, double strike) {
-    std::string symbol = fmt::format("{}-{}-{}-C", base, expiry, static_cast<int>(strike));
+std::string DeribitClient::create_symbol(const std::string& base, const std::string& expiry, double strike) {    
+    const std::string symbol = fmt::format("{}-{}-{}-C", base, expiry, static_cast<int>(strike));
     // example: BTC-30JUN23-30000-C
     return symbol;
 }
@@ -135,18 +129,20 @@ void DeribitClient::unsubscribe_ticker(const std::string& symbol) {
     subscribedTickers_.erase(symbol);
 }
 
+void DeribitClient::subscribe_tracked() {
+    for (const auto& expiry: trackedExpiries_) {
+        double spotPrice = dataManager_.getLatestSpotTick().price;
+        for (double strike = spotPrice * 0.8; strike <= spotPrice * 1.2; strike += (0.01 * spotPrice) ) { // For Larger coins 
+            std::string symbol = create_symbol(symbol_, expiry, strike);
+            subscribe_ticker(symbol);
+            
+        }
+    }
+}
+
 void DeribitClient::ticker_handler(const std::string& msg) {
     try {
         auto j = json::parse(msg);
-
-        /*
-        JSON Format for a ticker message from deribit:
-        
-        
-        
-        }*/
-      // https://test.deribit.com/api_console/?method=%2Fprivate%2Fsubscribe&channels=ticker.%7Binstrument_name%7D.%7Binterval%7D
-        // THIS is the testing suite for the websocket to deribit, play ariund to see the json format and make sure the request is correct
 
         double last_price = j["params"]["data"]["last_price"].get<double>();
         double last_quantity = j["params"]["data"]["last_quantity"].get<double>();

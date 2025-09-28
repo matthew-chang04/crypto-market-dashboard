@@ -56,8 +56,8 @@ public:
 
 	bool isInterrupted() const { return interrupted_; }
 	void setInterrupted(bool value) { interrupted_ = value; }
-	void setHost(std::string host) { host_ = host; }
-	void setPort(std::string port) { port_ = port; }
+	void setHost(const std::string& host) { host_ = host; }
+	void setPort(const std::string port) { port_ = port; }
 	void setHandler(std::function<void(const std::string&)> handler) { on_message_ = std::move(handler); }
 
 	std::string getTarget() const { return target_; }

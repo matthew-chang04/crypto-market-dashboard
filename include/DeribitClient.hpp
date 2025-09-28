@@ -21,6 +21,7 @@ public:
     void subscribe_ticker(const std::string& symbol);
     void unsubscribe_ticker(const std::string& symbol);
 
+    void subscribe_tracked();
     void ticker_handler(const std::string& msg) override;
 
     std::vector<std::string> trackedExpiries_;
