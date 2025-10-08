@@ -7,8 +7,8 @@ public:
     const static std::string HOST;
     const static std::string PORT;
 
-    KrakenClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol)
-        : WebSocketClient(ioc, sslCtx, resolver, target, symbol) {
+    KrakenClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol, MarketDataManager& dataManager)
+        : WebSocketClient(ioc, sslCtx, resolver, target, symbol, dataManager) {
             setHost(HOST);
             setPort(PORT);
         }
