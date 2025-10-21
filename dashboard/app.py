@@ -19,7 +19,7 @@ demoOptionData = pd.DataFrame({
     "type": ["call", "call", "call", "put", "put"],
     "expiry": ["1M", "1M", "2w", "1w", "1w"],
     "price": [1500, 1200, 800, 600, 400],
-    "IV" : [0.5, 0.45, 0.4, 0.35, 0.3]
+    "IV" : [0.4, 0.45, 0.4, 0.35, 0.3]
 })
 
 demoCoinData = pd.DataFrame({
