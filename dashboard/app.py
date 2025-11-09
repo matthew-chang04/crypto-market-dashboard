@@ -51,3 +51,4 @@ with col2:
     ax.set_yticks(np.arange(demoOptionData["expriry"].map({"1w":0, "2w":1, "1M":2})))
     ax.set_xticks(np.arange(len(demoOptionData["strike"])))
     st.pyplot(fig)
+
