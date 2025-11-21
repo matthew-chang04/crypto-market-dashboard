@@ -22,6 +22,7 @@ void MarketDataManager::addOptionTick(const std::string& key, const OptionTick& 
     optionTicks_[key] = tick;
 }
 
+
 OptionTick MarketDataManager::getOptionTick(const std::string& key) {
     std::lock_guard<std::mutex> lock(optionMutex_);
     auto it = optionTicks_.find(key);
