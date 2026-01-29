@@ -23,7 +23,6 @@ private:
 	void update();
 	void prettyPrint();
 
-	MarketDataManager* 
 	uint64_t lastUpdateID_;
 	std::map<double, double> bids_;
 	std::map<double, double> asks_;
