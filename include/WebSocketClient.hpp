@@ -44,6 +44,7 @@ public:
 
 	void stop();
 	void retryStart(beast::error_code ec);
+	void onMessage(const std::string& message);
 
 	void start();	
 	void do_resolve();
@@ -58,13 +59,11 @@ public:
 	void setInterrupted(bool value) { interrupted_ = value; }
 	void setHost(const std::string& host) { host_ = host; }
 	void setPort(const std::string port) { port_ = port; }
-	void setHandler(std::function<void(const std::string&)> handler) { on_message_ = std::move(handler); }
 
 	std::string getTarget() const { return target_; }
 	std::string getSymbol() const { return symbol_; }
 
 protected:
-	std::function<void(const std::string&)> on_message_;
 	net::io_context& ioc_;
 	net::ssl::context& sslCtx_;
 	tcp::resolver& resolver_;

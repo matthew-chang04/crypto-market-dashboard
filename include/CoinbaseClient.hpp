@@ -16,5 +16,5 @@ class CoinbaseClient: public WebSocketClient, public ExchangeInterface {
         std::string normalize_symbol(const std::string& symbol) override;
         void subscribe_orderbook() override; 
         void subscribe_ticker() override;
-
+        void onMessage(const std::string& msg) override;
 };
