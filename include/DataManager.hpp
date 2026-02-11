@@ -25,16 +25,19 @@ class MarketDataManager {
     std::mutex payloadMutex_;
 
     std::queue<SpotTick> spotTicks_;
+    std::mutex spotMutex_;
     int maxSpotTicks_ = 1000; // Maximum number of spot ticks to store
     SpotTick latestSpotTick_;
 
     std::unordered_map<std::string, OptionTick> optionTicks_;
+    std::mutex optionMutex_;
 
     OrderBook ob_;
 public:
 
     MarketDataManager();
     void addPayload(const std::string& type, const json& payload);
+    void processPayloads();
 
     void addSpotTick(const SpotTick& tick);
     SpotTick getLatestSpotTick();

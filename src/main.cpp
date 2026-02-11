@@ -16,6 +16,10 @@ int main(int argc, char * argv[]) // args: <exchange> <coin> <datatype>
 		std::cout << "Received message: " << message << std::endl;
 	});
 
+	clientManager.addFeed(CoinbaseClient::HOST, CoinbaseClient::PORT, std::string(argv[2]) + "@depth", [](const std::string& message) {
+		std::cout << "Received message: " << message << std::endl;
+	});
+
 	clientManager.run(2);
 	clientManager.startFeeds();
 
