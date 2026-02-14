@@ -22,11 +22,10 @@ void ClientManager::run(int numThreads) {
     }
 }
 
-void ClientManager::addFeed(std::string host, std::string port, std::string target, std::function<void(const std::string&)> handler) {
-    auto client = std::make_shared<WebSocketClient>(ioc_, sslCtx_, resolver_, target);
+void ClientManager::addFeed(std::string host, std::string port, std::string target, MarketDataManager& dataManager) {
+    auto client = std::make_shared<WebSocketClient>(ioc_, sslCtx_, resolver_, target, dataManager);
     client->setHost(std::move(host));
     client->setPort(std::move(port));
-    client->setHandler(handler);
     clients_.push_back(client);
 }
 

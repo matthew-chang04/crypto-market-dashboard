@@ -22,8 +22,8 @@ class ClientManager {
             sslCtx_.set_verify_mode(boost::asio::ssl::verify_peer);
         }
         
-        void addFeed(std::string host, std::string port, std::string target, std::function<void(const std::string&)> handler);
-        void addOptionFeed(std::string host, std::string port, std::string target, MarketDataManager& dataManager);
+        void addFeed(std::string host, std::string port, std::string target, MarketDataManager& dataManager);
+        void addOptionFeed(std::string host, std::string port, std::string target, MarketDataManager& dataMager);
         void run(int numThreads = 2);
 		void startFeeds();
         void stopFeeds();

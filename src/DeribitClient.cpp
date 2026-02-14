@@ -132,10 +132,10 @@ void DeribitClient::unsubscribe_ticker(const std::string& symbol) {
 void DeribitClient::subscribe_tracked() {
     for (const auto& expiry: trackedExpiries_) {
         double spotPrice = dataManager_.getLatestSpotTick().price;
-        for (double strike = spotPrice * 0.8; strike <= spotPrice * 1.2; strike += (0.01 * spotPrice) ) { // For Larger coins 
+		int spotThousands = spotPrice / 1000
+        for (double strike = spotThousands - 5; strike <= spotThousands + 5; strike += 1) { // For Larger coins 
             std::string symbol = create_symbol(symbol_, expiry, strike);
             subscribe_ticker(symbol);
-            
         }
     }
 }
