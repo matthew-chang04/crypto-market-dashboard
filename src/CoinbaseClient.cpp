@@ -47,8 +47,6 @@ void CoinbaseClient::subscribe_ticker() {
 
 void CoinbaseClient::onMessage(const std::string& msg) {
     json payload = json::parse(msg);
-
     std::string type = payload["type"];
-
     dataManager_.addPayload(type, payload);
 }
