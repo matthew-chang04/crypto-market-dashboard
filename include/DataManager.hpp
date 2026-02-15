@@ -18,6 +18,7 @@ struct OptionTick {
     double quantity;
     double IV;
     std::chrono::system_clock::time_point timestamp;
+
 };
 
 class MarketDataManager {
@@ -48,5 +49,6 @@ public:
     void startOrderBook();
     std::shared_ptr<OrderBook> getOrderBook() { return std::make_shared<OrderBook>(ob_); }
 
+	void tick();
 
 };

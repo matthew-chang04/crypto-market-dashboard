@@ -76,3 +76,7 @@ void MarketDataManager::processPayloads() {
     }
 }
 
+void DataManager::tick() {
+
+	
+}
