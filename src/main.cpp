@@ -15,8 +15,8 @@ int main(int argc, char * argv[]) // args: <exchange> <coin> <datatype>
 
 	std::shared_ptr<MarketDataManager> dmPointer = std::make_shared<MarketDataManager>(dmPointer);
 
-	clientManager.addFeed(CoinbaseClient::HOST, CoinbaseClient::PORT, CoinbaseClient::tickerUrl, std::copy(dmPointer))
-	clientManager.addFeed(DeribitClient::HOST, DeribitClient::PORT, DeribitClient::impliedVolUrl, std::copy(dmPointer))
+	clientManager.addFeed(CoinbaseClient::HOST, CoinbaseClient::PORT, CoinbaseClient::tickerUrl, std::copy(dmPointer));
+	clientManager.addFeed(DeribitClient::HOST, DeribitClient::PORT, DeribitClient::impliedVolUrl, std::copy(dmPointer));
 
 	clientManager.run(2);
 	clientManager.startFeeds();

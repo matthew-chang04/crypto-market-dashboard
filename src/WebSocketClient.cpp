@@ -40,7 +40,6 @@ void WebSocketClient::stop() {
 		std::shared_ptr<WebSocketClient> self = shared_from_this();
 		ws_->async_close(websocket::close_code::normal, 
 			[self](beast::error_code ec) {
-				if (ec == boost::asio::ssl::error::stream_truncated || ec == boost::asio::error::eof) {
 					ec.clear();
 				} else if (ec) {
 					std::cerr << "Error closing WebSocket: " << ec.message() << std::endl;
