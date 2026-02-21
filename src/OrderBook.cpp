@@ -9,14 +9,12 @@ using json = nlohmann::json;
 OrderBook::OrderBook() : lastUpdateID_{}, bids_{}, asks_{} {}
 
 void OrderBook::run()
-{
-	
+{	
 	while(true) {
 		if (true) {
 			if (updateThread_.joinable()) {
 				updateThread_.join();
-			}
-			
+			}			
 			// requestRestart();
 		}
 	}
