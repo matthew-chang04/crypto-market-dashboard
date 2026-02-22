@@ -19,9 +19,14 @@ struct OptionTick {
     double IV;
     std::chrono::system_clock::time_point timestamp;
 
+	std::string expiry;
+	std::string strike;
+
 };
 
 class MarketDataManager {
+	
+	std::string ticker;
     std::unordered_map<std::string, json> newPayloads_;
     std::mutex payloadMutex_;
 
@@ -30,7 +35,7 @@ class MarketDataManager {
     int maxSpotTicks_ = 1000; // Maximum number of spot ticks to store
     SpotTick latestSpotTick_;
 
-    std::unordered_map<std::string, OptionTick> optionTicks_;
+    std::unordered_map<std::string, OptionTick> optionTicks_
     std::mutex optionMutex_;
 
     OrderBook ob_;

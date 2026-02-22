@@ -19,9 +19,13 @@ SpotTick MarketDataManager::getLatestSpotTick() {
     return latestSpotTick_;
 }
 
-void MarketDataManager::addOptionTick(const std::string& key, const OptionTick& tick) {
+void MarketDataManager::addOptionTick(json payload) {
+
     std::lock_guard<std::mutex> lock(optionMutex_);
     optionTicks_[key] = tick;
+
+	// TODO: fix client manager and data manager relations, should client manager just send payloads, or parse them to be pulled by data manager?? 
+
 }
 
 
@@ -77,6 +81,8 @@ void MarketDataManager::processPayloads() {
 }
 
 void DataManager::tick() {
-
 	
+	processPayloads();
+
+
 }
