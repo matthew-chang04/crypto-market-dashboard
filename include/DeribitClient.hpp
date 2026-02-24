@@ -1,4 +1,5 @@
 #include "WebSocketClient.hpp"
+#include <nlohmann/json.hpp>
 #include <string>
 #include <set>
 #include <chrono>
@@ -12,7 +13,7 @@ public:
     const static std::string HOST;
     const static std::string PORT;
 
-    DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol, MarketDataManager& dataManager);
+    DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol);
 
     std::string normalize_symbol(const std::string& symbol) override;
     std::string format_date(std::chrono::sys_days day);
@@ -21,8 +22,8 @@ public:
     void subscribe_ticker(const std::string& symbol);
     void unsubscribe_ticker(const std::string& symbol);
 
-    void subscribe_tracked();
-    void ticker_handler(const std::string& msg) override;
+    void subscribe_tracked(double spotPrice);
+    nlohmann::json processPayload(const std::string& msg) override;
 
     std::vector<std::string> trackedExpiries_;
     std::set<std::string> subscribedTickers_;

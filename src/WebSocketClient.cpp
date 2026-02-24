@@ -138,7 +138,7 @@ void WebSocketClient::do_read() {
 				return;
 			}
 			std::string msg = beast::buffers_to_string(self->readDump_.data());
-			self->onMessage(msg);
+			self->messageQueue_.push(self->parsePayload(msg));
 			self->readDump_.consume(self->readDump_.size());
 			self->do_read();
 		});

@@ -44,8 +44,7 @@ public:
 
 	void stop();
 	void retryStart(beast::error_code ec);
-	void onMessage(const std::string& message);
-
+	nlohmann::json parsePayload(const std::string& message);
 	void start();	
 	void do_resolve();
 	void do_connect(tcp::resolver::results_type results);
@@ -74,11 +73,11 @@ protected:
 	std::string port_;
 	std::string target_;
 	std::string symbol_;
-	MarketDataManager& dataManager_;
 
 	std::mutex mutex_;
 	beast::flat_buffer readDump_;
-	
+	std::queue<nlohmann::json> messageQueue_;
+
 	bool interrupted_;
 };
 

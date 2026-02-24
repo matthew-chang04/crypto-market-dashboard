@@ -22,17 +22,13 @@ void ClientManager::run(int numThreads) {
     }
 }
 
-void ClientManager::addFeed(std::string host, std::string port, std::string target, MarketDataManager& dataManager) {
-    auto client = std::make_shared<WebSocketClient>(ioc_, sslCtx_, resolver_, target, dataManager);
-    client->setHost(std::move(host));
-    client->setPort(std::move(port));
+void ClientManager::addFeed(std::string host, std::string port, std::string target) {
+    auto client = std::make_shared<WebSocketClient>(ioc_, sslCtx_, resolver_, target, this->dataManager_);
     clients_.push_back(client);
 }
 
-void ClientManager::addOptionFeed(std::string host, std::string port, std::string target, MarketDataManager& dataManager) {
-    optionsClient_ = std::make_shared<DeribitClient>(ioc_, sslCtx_, resolver_, target, "", dataManager);
-    optionsClient_->setHost(std::move(host));
-    optionsClient_->setPort(std::move(port));
+void ClientManager::addOptionFeed(std::string host, std::string port, std::string target) {
+    optionsClient_ = std::make_shared<DeribitClient>(ioc_, sslCtx_, resolver_, target, "", this->dataManager_);
 }
 
 void ClientManager::startFeeds() {

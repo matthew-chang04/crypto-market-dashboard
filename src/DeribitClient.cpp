@@ -126,32 +126,39 @@ void DeribitClient::unsubscribe_ticker(const std::string& symbol) {
     }})", nextId_++, symbol);
 
     ws_->async_write(net::buffer(unsubReq));
-    subscribedTickers_.erase(symbol);
+    this->subscribedTickers_.erase(symbol);
 }
 
-void DeribitClient::subscribe_tracked() {
+void DeribitClient::subscribe_tracked(double spotPrice) {
     for (const auto& expiry: trackedExpiries_) {
-        double spotPrice = dataManager_.getLatestSpotTick().price;
-		int spotThousands = spotPrice / 1000
-        for (double strike = spotThousands - 5; strike <= spotThousands + 5; strike += 1) { // For Larger coins 
+
+        int spotThousands = spotPrice / 1000;
+        for (double strike = spotThousands - 5; strike <= spotThousands + 5; strike += 1) { // For Larger coins
             std::string symbol = create_symbol(symbol_, expiry, strike);
             subscribe_ticker(symbol);
         }
     }
 }
 
-void DeribitClient::ticker_handler(const std::string& msg) {
+nlohmann::json DeribitClient::processPayload(const std::string& msg) {
     try {
         auto j = json::parse(msg);
+        nlohmann::json normalized;
 
         double last_price = j["params"]["data"]["last_price"].get<double>();
         double last_quantity = j["params"]["data"]["last_quantity"].get<double>();
         double iv = j["params"]["data"]["mark_iv"].get<double>();
         std::string name = j["params"]["data"]["instrument_name"].get<std::string>();
-        dataManager_.addOptionTick(name, OptionTick{last_price, last_quantity, iv, std::chrono::system_clock::now()});
+
+        normalized["price"] = last_price;
+        normalized["quantity"] = last_quantity;
+        normalized["iv"] = iv;
+        normalized["symbol"] = name;
+
+        return normalized;
 
     } catch (const std::exception& e) {
         std::cerr << "JSON parse error: " << e.what() << std::endl;
-        return;
+        return {};
     }
 }

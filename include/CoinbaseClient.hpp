@@ -7,14 +7,14 @@ class CoinbaseClient: public WebSocketClient, public ExchangeInterface {
         const static std::string HOST;
         const static std::string PORT;
 
-        CoinbaseClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol, MarketDataManager& dataManager)
-            : WebSocketClient(ioc, sslCtx, resolver, target, symbol, dataManager) {
-                setHost(HOST);
-                setPort(PORT);
-            }
+        CoinbaseClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol)
+            : WebSocketClient(ioc, sslCtx, resolver, target, symbol)
 
         std::string normalize_symbol(const std::string& symbol) override;
         void subscribe_orderbook() override; 
         void subscribe_ticker() override;
-        void onMessage(const std::string& msg);
+        nlohmann::json parsePayload(const std::string& msg) override;
 };
+
+
+// TODO: LOCK IN AND FIX ALL THE INCONSITENCIES, SHOULD ALL WORK TOGETHER

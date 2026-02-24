@@ -17,13 +17,13 @@ using tcp = boost::asio::ip::tcp;
 
 class ClientManager {
     public:
-        ClientManager(): ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv12_client}, resolver_{ioc_} {
+        ClientManager(): ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv12_client}, resolver_{ioc_}, dataManager_{std::make_shared<MarketDataManager>()} {
             sslCtx_.set_options(boost::asio::ssl::context::default_workarounds);
             sslCtx_.set_verify_mode(boost::asio::ssl::verify_peer);
         }
         
-        void addFeed(std::string host, std::string port, std::string target, MarketDataManager& dataManager);
-        void addOptionFeed(std::string host, std::string port, std::string target, MarketDataManager& dataMager);
+        void addFeed(std::string host, std::string port, std::string target);
+        void addOptionFeed(std::string host, std::string port, std::string target);
         void run(int numThreads = 2);
 		void startFeeds();
         void stopFeeds();
@@ -40,5 +40,5 @@ class ClientManager {
         std::vector<std::shared_ptr<WebSocketClient>> clients_;
         std::shared_ptr<DeribitClient> optionsClient_;
 
-        MarketDataManager dataManager_;
+        MarketDataManager& dataManager_;
 };

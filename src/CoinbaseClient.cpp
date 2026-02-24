@@ -45,8 +45,16 @@ void CoinbaseClient::subscribe_ticker() {
     ws_->async_write(net::buffer(subReq));
 }
 
-void CoinbaseClient::onMessage(const std::string& msg) {
+nlohmann::json CoinbaseClient::parsePayload(const std::string& msg) {
     json payload = json::parse(msg);
-    std::string type = payload["type"];
-    dataManager_.addPayload(type, payload);
+    std::string type = payload["type"].get<std::string>();
+    
+    json normalized;
+    if (type == "ticker") {
+        normalized["symbol"] = payload["product_id"];
+        normalized["price"] = std::stod(payload["price"].get<std::string>());
+        normalized["side"] = payload["side"];
+    }
+
+    return normalized;
 }
