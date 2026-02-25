@@ -17,7 +17,8 @@ using tcp = boost::asio::ip::tcp;
 
 class ClientManager {
     public:
-        ClientManager(): ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv12_client}, resolver_{ioc_}, dataManager_{std::make_shared<MarketDataManager>()} {
+        ClientManager(): ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv12_client}, resolver_{ioc_}, dataManager_{std::make_unique<MarketDataManager>()} {
+        
             sslCtx_.set_options(boost::asio::ssl::context::default_workarounds);
             sslCtx_.set_verify_mode(boost::asio::ssl::verify_peer);
         }
@@ -28,8 +29,11 @@ class ClientManager {
 		void startFeeds();
         void stopFeeds();
 
+        void sendData();
+
         void updateATM(double spot, int strikeRange = 5);
         void createOrderBook(const std::string& symbol);
+
 
     private:
         boost::asio::io_context ioc_;
@@ -40,5 +44,5 @@ class ClientManager {
         std::vector<std::shared_ptr<WebSocketClient>> clients_;
         std::shared_ptr<DeribitClient> optionsClient_;
 
-        MarketDataManager& dataManager_;
+        std::unique_ptr<MarketDataManager> dataManager_;
 };

@@ -35,8 +35,8 @@ using json = nlohmann::json;
 const std::string DeribitClient::HOST = "wss://www.deribit.com/ws/api/v2";
 const std::string DeribitClient::PORT = "";
 
-DeribitClient::DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol, MarketDataManager& dataManager)
-        : WebSocketClient(ioc, sslCtx, resolver, target, symbol, dataManager) {
+DeribitClient::DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol)
+        : WebSocketClient(ioc, sslCtx, resolver, target, symbol) {
             setHost(HOST);
             setPort(PORT);     
             
@@ -150,6 +150,7 @@ nlohmann::json DeribitClient::processPayload(const std::string& msg) {
         double iv = j["params"]["data"]["mark_iv"].get<double>();
         std::string name = j["params"]["data"]["instrument_name"].get<std::string>();
 
+        normalized['type'] = 'option_tick';
         normalized["price"] = last_price;
         normalized["quantity"] = last_quantity;
         normalized["iv"] = iv;

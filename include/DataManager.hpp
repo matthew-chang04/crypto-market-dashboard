@@ -35,20 +35,19 @@ class MarketDataManager {
     int maxSpotTicks_ = 1000; // Maximum number of spot ticks to store
     SpotTick latestSpotTick_;
 
-    std::unordered_map<std::string, OptionTick> optionTicks_
+    std::unordered_map<std::string, OptionTick> optionTicks_;
     std::mutex optionMutex_;
 
     OrderBook ob_;
 public:
 
     MarketDataManager();
-    void addPayload(const std::string& type, const json& payload);
-    void processPayloads();
+    void processMessage(nlohmann::json payload);
 
-    void addSpotTick(const SpotTick& tick);
+    void addSpotTick(nlohmann::json payload);
     SpotTick getLatestSpotTick();
 
-    void addOptionTick(const std::string& key, const OptionTick& tick);
+    void addOptionTick(nlohmann::json payload);
     OptionTick getOptionTick(const std::string& key);
 
     void startOrderBook();

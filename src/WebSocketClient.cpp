@@ -159,3 +159,16 @@ void WebSocketClient::subscribe() {
 	}
 	do_read();
 }
+
+bool WebSocketClient::hasMessages() {
+	return !messageQueue_.empty();
+}
+
+nlohmann::json WebSocketClient::getNextMessage() {
+	if (messageQueue_.empty()) {
+		return {};
+	}
+	nlohmann::json msg = messageQueue_.front();
+	messageQueue_.pop();
+	return msg;
+}

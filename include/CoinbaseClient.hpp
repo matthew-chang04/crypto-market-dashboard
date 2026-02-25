@@ -8,7 +8,7 @@ class CoinbaseClient: public WebSocketClient, public ExchangeInterface {
         const static std::string PORT;
 
         CoinbaseClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol)
-            : WebSocketClient(ioc, sslCtx, resolver, target, symbol)
+            : WebSocketClient(ioc, sslCtx, resolver, target, symbol) {}
 
         std::string normalize_symbol(const std::string& symbol) override;
         void subscribe_orderbook() override; 

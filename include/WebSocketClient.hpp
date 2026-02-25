@@ -1,5 +1,4 @@
 #pragma once
-#include "DataManager.hpp"
 #include "ExchangeInterface.hpp"
 #include <nlohmann/json.hpp>
 #include <boost/asio/strand.hpp>
@@ -61,6 +60,8 @@ public:
 
 	std::string getTarget() const { return target_; }
 	std::string getSymbol() const { return symbol_; }
+	bool hasMessages();
+	nlohmann::json getNextMessage();
 
 protected:
 	net::io_context& ioc_;

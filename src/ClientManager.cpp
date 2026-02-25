@@ -44,6 +44,15 @@ void ClientManager::stopFeeds() {
     }
 }
 
+void ClientManager::sendData() {
+    for (std::shared_ptr<WebSocketClient> client : clients_) {
+        while(client->hasMessages()) {
+            nlohmann::json msg = client->getNextMessage();
+            dataManager_->processMessage(msg);
+        }
+    }
+}
+
 void ClientManager::updateATM(double spot, int strikeRange) {
     double atmStrike = std::round(spot / strikeRange) * strikeRange;
 

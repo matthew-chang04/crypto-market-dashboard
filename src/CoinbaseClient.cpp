@@ -46,11 +46,12 @@ void CoinbaseClient::subscribe_ticker() {
 }
 
 nlohmann::json CoinbaseClient::parsePayload(const std::string& msg) {
-    json payload = json::parse(msg);
+    nlohmann::json payload = nlohmann::json::parse(msg);
     std::string type = payload["type"].get<std::string>();
-    
-    json normalized;
-    if (type == "ticker") {
+
+    nlohmann::json normalized;
+    if (strcmp(type.c_str(), "ticker") == 0) {
+        normalized['type'] = 'ticker';
         normalized["symbol"] = payload["product_id"];
         normalized["price"] = std::stod(payload["price"].get<std::string>());
         normalized["side"] = payload["side"];
