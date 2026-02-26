@@ -22,7 +22,7 @@ void MarketDataManager::addOptionTick(json payload) {
 	// TODO: fix client manager and data manager relations, should client manager just send payloads, or parse them to be pulled by data manager?? 
 
 }
-
+ 
 
 OptionTick MarketDataManager::getOptionTick(const std::string& key) {
     std::lock_guard<std::mutex> lock(optionMutex_);
