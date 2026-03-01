@@ -39,15 +39,18 @@ class MarketDataManager {
     std::mutex optionMutex_;
 
     OrderBook ob_;
+
+	void processNewTicker(const json& payload, std::chrono::system_clock::time_point timestamp);
+	void processNewOptionTick(const json& payload, std::chrono::system_clock::time_point timestamp);
 public:
 
     MarketDataManager();
     void processMessage(nlohmann::json payload);
 
-    void addSpotTick(nlohmann::json payload);
+    void addSpotTick(SpotTick tick);
     SpotTick getLatestSpotTick();
 
-    void addOptionTick(nlohmann::json payload);
+    void addOptionTick(OptionTick tick, const std::string& key);
     OptionTick getOptionTick(const std::string& key);
 
     void startOrderBook();

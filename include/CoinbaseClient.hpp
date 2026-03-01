@@ -16,5 +16,3 @@ class CoinbaseClient: public WebSocketClient, public ExchangeInterface {
         nlohmann::json parsePayload(const std::string& msg) override;
 };
 
-
-// TODO: LOCK IN AND FIX ALL THE INCONSITENCIES, SHOULD ALL WORK TOGETHER

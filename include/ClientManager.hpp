@@ -34,7 +34,7 @@ class ClientManager {
         void updateATM(double spot, int strikeRange = 5);
         void createOrderBook(const std::string& symbol);
 
-
+		void tick();
     private:
         boost::asio::io_context ioc_;
         boost::asio::ssl::context sslCtx_;
