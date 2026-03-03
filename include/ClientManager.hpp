@@ -7,13 +7,13 @@
 #include "WebSocketClient.hpp"
 #include "OrderBook.hpp"
 #include "DataManager.hpp"
-#include "DeribitClient.hpp"
 
 namespace beast = boost::beast;   
 namespace http = beast::http;          
 namespace websocket = beast::websocket;
 namespace net = boost::asio;           
 using tcp = boost::asio::ip::tcp;     
+
 
 class ClientManager {
     public:

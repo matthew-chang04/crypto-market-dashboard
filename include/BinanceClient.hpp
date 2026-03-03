@@ -13,7 +13,6 @@
 #include <boost/asio/ssl/stream.hpp>
 #include <boost/beast/ssl.hpp>
 #include "WebSocketClient.hpp"
-#include "ExchangeInterface.hpp"
 
 namespace beast = boost::beast;
 
@@ -23,8 +22,8 @@ public:
 	const static  std::string HOST;
 	const static std::string PORT;
 
-	BinanceClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol)
-		: WebSocketClient(ioc, sslCtx, resolver, target, symbol, *(new MarketDataManager())) {
+	BinanceClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::vector<std::string>& symbols)
+		: WebSocketClient(ioc, sslCtx, resolver, target, symbols) {
 			setHost(HOST);
 			setPort(PORT);
 		}

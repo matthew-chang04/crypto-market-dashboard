@@ -67,24 +67,9 @@ void BinanceClient::subscribe_ticker() {
 	std::string subReq = fmt::format(R"({{
 		"method": "SUBSCRIBE",
 		"params": ["{}@aggTrade"]
-	}})", symbol_);
+	}})", symbols_[0]);
 
 	ws_->async_write(net::buffer(subReq));
-}
-
-void BinanceClient::ticker_handler(const std::string& msg) {
-	try {
-		json data = json::parse(msg);
-		double price = std::stod(data["p"].get<std::string>());
-		double quantity = std::stod(data["q"].get<std::string>());
-		std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::now();
-
-		SpotTick tick{price, quantity, timestamp};
-		dataManager_.addSpotTick(tick);
-
-	} catch (const std::exception& e) {
-		std::cerr << "Error in ticker_handler: " << e.what() << std::endl;
-	}
 }
 
 void BinanceClient::orderbook_handler(const std::string& msg) {

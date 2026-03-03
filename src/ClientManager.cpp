@@ -23,12 +23,12 @@ void ClientManager::run(int numThreads) {
 }
 
 void ClientManager::addFeed(std::string host, std::string port, std::string target) {
-    auto client = std::make_shared<WebSocketClient>(ioc_, sslCtx_, resolver_, target, this->dataManager_);
+    auto client = std::make_shared<WebSocketClient>(ioc_, sslCtx_, resolver_, target, "");
     clients_.push_back(client);
 }
 
 void ClientManager::addOptionFeed(std::string host, std::string port, std::string target) {
-    optionsClient_ = std::make_shared<DeribitClient>(ioc_, sslCtx_, resolver_, target, "", this->dataManager_);
+    optionsClient_ = std::make_shared<DeribitClient>(ioc_, sslCtx_, resolver_, target, "");
 }
 
 void ClientManager::startFeeds() {

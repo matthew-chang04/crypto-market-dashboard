@@ -1,5 +1,4 @@
 #include <string>
-#include "OrderBook.hpp"
 #include <unordered_map>
 #include <queue>
 #include <mutex>
@@ -54,7 +53,6 @@ public:
     OptionTick getOptionTick(const std::string& key);
 
     void startOrderBook();
-    std::shared_ptr<OrderBook> getOrderBook() { return std::make_shared<OrderBook>(ob_); }
 
 	void tick();
 

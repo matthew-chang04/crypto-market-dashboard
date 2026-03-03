@@ -20,5 +20,7 @@ int main(int argc, char * argv[]) // args: <exchange> <coin> <datatype>
 	clientManager.run(2);
 	clientManager.startFeeds();
 
+	
+
 	return 0;
 }

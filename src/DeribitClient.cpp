@@ -41,7 +41,7 @@ DeribitClient::DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tc
             setPort(PORT);     
             
             auto now = floor<std::chrono::days>(system_clock::now());   
-            std::chrono::sys_days day = time_point_cast<std::chrono::days>(now);
+            auto day = time_point_cast<std::chrono::days>(now);
 
         int businessDaysCount = 0;
 
@@ -62,7 +62,7 @@ std::string DeribitClient::normalize_symbol(const std::string& symbol) {
     return normalized;
 }
 
-std::string DeribitClient::format_date(std::chrono::sys_days day) {
+std::string DeribitClient::format_date(std::chrono::system_clock::time_point day) {
 
     // Format date as DDMMMYY (e.g., 30JUN23)
      std::string date = std::format("{:%d%b%y}", day);

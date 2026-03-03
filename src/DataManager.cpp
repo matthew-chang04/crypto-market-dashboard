@@ -8,8 +8,6 @@ MarketDataManager::MarketDataManager() : latestSpotTick_{0, 0, std::chrono::syst
 
 void MarketDataManager::addSpotTick(SpotTick tick) {
     spotTicks_.push(tick);
-} {
-
 }
 
 SpotTick MarketDataManager::getLatestSpotTick() {
@@ -20,7 +18,6 @@ void MarketDataManager::addOptionTick(OptionTick tick, const std::string& key) {
     optionTicks_[key] = tick;
 }
  
-
 OptionTick MarketDataManager::getOptionTick(const std::string& key) {
     std::lock_guard<std::mutex> lock(optionMutex_);
     auto it = optionTicks_.find(key);
@@ -71,6 +68,8 @@ void MarketDataManager::processMessage(json payload) {
             processNewTicker(payload, timestamp);
         } else if (strcmp(type.c_str(), "option") == 0) {
             processNewOptionTick(payload, timestamp);
+        } else {
+            std::cout << "Message type not implemented: " << type << std::endl;
         }
     } catch (const std::exception& e) {
         std::cout << "Error parsing payload: " << e.what() << std::endl;
