@@ -7,7 +7,7 @@
 #include <utility>
 #include <memory>
 
-// DEMO usage flow for continued development/testing
+ // DEMO usage flow for continued development/testing
   
 int main(int argc, char * argv[]) // args: <exchange> <coin> <datatype>
 {
