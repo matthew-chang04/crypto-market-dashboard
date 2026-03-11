@@ -35,7 +35,7 @@ using json = nlohmann::json;
 const std::string DeribitClient::HOST = "wss://www.deribit.com/ws/api/v2";
 const std::string DeribitClient::PORT = "";
 
-DeribitClient::DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string symbol)
+DeribitClient::DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string& target, std::string& symbol)
         : WebSocketClient(ioc, sslCtx, resolver, target, symbol) {
             setHost(HOST);
             setPort(PORT);     

@@ -7,11 +7,12 @@ set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
 add_executable(Exec
 	src/main.cpp
-	src/OrderBook.cpp
+	# src/OrderBook.cpp
 	src/WebSocketClient.cpp
-	src/BinanceClient.cpp
+	# src/BinanceClient.cpp
 	src/ClientManager.cpp
 	src/DeribitClient.cpp
+	src/CoinbaseClient.cpp
 	)
 
 find_package(Boost REQUIRED COMPONENTS system)
