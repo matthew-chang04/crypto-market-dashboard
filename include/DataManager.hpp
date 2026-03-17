@@ -3,8 +3,7 @@
 #include <queue>
 #include <mutex>
 #include <nlohmann/json.hpp>
-
-
+#include "OrderBook.hpp"
 struct SpotTick {
     double price;
     double quantity;

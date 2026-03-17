@@ -67,7 +67,7 @@ void BinanceClient::subscribe_ticker() {
 	std::string subReq = fmt::format(R"({{
 		"method": "SUBSCRIBE",
 		"params": ["{}@aggTrade"]
-	}})", symbols_[0]);
+	}})", symbol_);
 
 	ws_->async_write(net::buffer(subReq));
 }

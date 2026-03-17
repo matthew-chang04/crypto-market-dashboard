@@ -5,7 +5,6 @@
 #include <boost/asio.hpp>
 #include <memory>
 #include "WebSocketClient.hpp"
-#include "OrderBook.hpp"
 #include "DataManager.hpp"
 
 namespace beast = boost::beast;   
@@ -23,7 +22,7 @@ class ClientManager {
             sslCtx_.set_verify_mode(boost::asio::ssl::verify_peer);
         }
         
-        void addFeed(std::string host, std::string port, std::string target);
+        void addFeed(std::string exchange, std::string host, std::string port, std::string target);
         void addOptionFeed(std::string host, std::string port, std::string target);
         void run(int numThreads = 2);
 		void startFeeds();

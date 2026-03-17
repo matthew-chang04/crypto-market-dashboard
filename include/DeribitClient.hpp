@@ -15,7 +15,7 @@ public:
     const static std::string HOST;
     const static std::string PORT;
 
-    DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string target, std::string& symbol);
+    DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string& target, std::string& symbol);
 
     std::string normalize_symbol(const std::string& symbol) override;
     std::string format_date(std::chrono::system_clock::time_point day);

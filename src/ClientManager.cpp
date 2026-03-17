@@ -1,5 +1,6 @@
 #include "ClientManager.hpp"
-#include "WebSocketClient.hpp"
+#include "CoinbaseClient.hpp"
+#include "DeribitClient.hpp"
 #include <memory>
 #include <iostream>
 #include <stdexcept>
@@ -22,8 +23,15 @@ void ClientManager::run(int numThreads) {
     }
 }
 
-void ClientManager::addFeed(std::string host, std::string port, std::string target) {
-    auto client = std::make_shared<WebSocketClient>(ioc_, sslCtx_, resolver_, target, "");
+void ClientManager::addFeed(const std::string& exchange, std::string host, std::string port, std::string target) {
+
+    std::shared_ptr<WebSocketClient> client;
+    if (strcmp(exchange, "Coinbase") == 0) {
+        client = std::make_shared<CoinbaseClient>(ioc_, sslCtx_, resolver_, target, "");
+    } else if (strcmp(exchange, "Deribit") == 0) {
+        client = std::make_shared<DeribitClient>(ioc_, sslCtx_, resolver_, target, "");
+    }
+    
     clients_.push_back(client);
 }
 
