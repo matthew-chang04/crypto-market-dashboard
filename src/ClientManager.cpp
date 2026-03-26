@@ -26,10 +26,10 @@ void ClientManager::run(int numThreads) {
 void ClientManager::addFeed(const std::string& exchange, std::string host, std::string port, std::string target) {
 
     std::shared_ptr<WebSocketClient> client;
-    if (strcmp(exchange, "Coinbase") == 0) {
-        client = std::make_shared<CoinbaseClient>(ioc_, sslCtx_, resolver_, target, "");
-    } else if (strcmp(exchange, "Deribit") == 0) {
-        client = std::make_shared<DeribitClient>(ioc_, sslCtx_, resolver_, target, "");
+    if (strcmp(exchange.c_str(), "Coinbase") == 0) {
+        client = std::make_shared<CoinbaseClient>(ioc_, sslCtx_, resolver_, target, " ");
+    } else if (strcmp(exchange.c_str(), "Deribit") == 0) {
+        client = std::make_shared<DeribitClient>(ioc_, sslCtx_, resolver_, target, " ");
     }
     
     clients_.push_back(client);
