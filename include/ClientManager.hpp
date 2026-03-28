@@ -6,6 +6,7 @@
 #include <memory>
 #include "WebSocketClient.hpp"
 #include "DataManager.hpp"
+#include "DeribitClient.hpp"
 
 namespace beast = boost::beast;   
 namespace http = beast::http;          
@@ -16,13 +17,13 @@ using tcp = boost::asio::ip::tcp;
 
 class ClientManager {
     public:
-        ClientManager(): ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv12_client}, resolver_{ioc_}, dataManager_{std::make_unique<MarketDataManager>()} {
+        ClientManager(const std::string& asset): asset_{asset}, ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv12_client}, resolver_{ioc_}, dataManager_{std::make_unique<MarketDataManager>()} {
         
             sslCtx_.set_options(boost::asio::ssl::context::default_workarounds);
             sslCtx_.set_verify_mode(boost::asio::ssl::verify_peer);
         }
         
-        void addFeed(std::string exchange, std::string host, std::string port, std::string target);
+        void addFeed(const std::string& exchange, std::string host, std::string port, std::string target);
         void addOptionFeed(std::string host, std::string port, std::string target);
         void run(int numThreads = 2);
 		void startFeeds();
@@ -35,6 +36,8 @@ class ClientManager {
 
 		void tick();
     private:
+
+        std::string asset_;
         boost::asio::io_context ioc_;
         boost::asio::ssl::context sslCtx_;
         tcp::resolver resolver_;

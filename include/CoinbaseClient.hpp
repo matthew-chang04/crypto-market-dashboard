@@ -10,10 +10,10 @@ class CoinbaseClient: public WebSocketClient {
             : WebSocketClient(ioc, sslCtx, resolver, target, symbol) {}
 
         std::string normalize_symbol(const std::string& symbol) override;
-        virtual void subscribe_orderbook() override; 
-        void subscribe_ticker() override;
+        void subscribe_orderbook(const std::string& symbol) override; 
+        void subscribe_ticker(const std::string& symbol) override;
+        void unsubscribe_ticker(const std::string& symbol) override;
         nlohmann::json parsePayload(const std::string& msg) override;
 
-    
 };
 

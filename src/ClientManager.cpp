@@ -1,6 +1,5 @@
 #include "ClientManager.hpp"
 #include "CoinbaseClient.hpp"
-#include "DeribitClient.hpp"
 #include <memory>
 #include <iostream>
 #include <stdexcept>
@@ -27,22 +26,22 @@ void ClientManager::addFeed(const std::string& exchange, std::string host, std::
 
     std::shared_ptr<WebSocketClient> client;
     if (strcmp(exchange.c_str(), "Coinbase") == 0) {
-        client = std::make_shared<CoinbaseClient>(ioc_, sslCtx_, resolver_, target, " ");
+        client = std::make_shared<CoinbaseClient>(ioc_, sslCtx_, resolver_, target, asset_);
     } else if (strcmp(exchange.c_str(), "Deribit") == 0) {
-        client = std::make_shared<DeribitClient>(ioc_, sslCtx_, resolver_, target, " ");
+        client = std::make_shared<DeribitClient>(ioc_, sslCtx_, resolver_, target, asset_);
     }
     
     clients_.push_back(client);
 }
 
 void ClientManager::addOptionFeed(std::string host, std::string port, std::string target) {
-    optionsClient_ = std::make_shared<DeribitClient>(ioc_, sslCtx_, resolver_, target, "");
+    optionsClient_ = std::make_shared<DeribitClient>(ioc_, sslCtx_, resolver_, target, asset_);
 }
 
 void ClientManager::startFeeds() {
 	for (auto client : clients_) {
 		client->start(); 
-		client->subscribe();
+		client->subscribe(asset_, "ticker"); // default to ticker for now until orderbook logic is built
 	}
 }
 
@@ -75,7 +74,7 @@ void ClientManager::updateATM(double spot, int strikeRange) {
     std::vector<std::string> newSubs;
     for (std::string expiry : optionsClient_->trackedExpiries_) {
         for (double strike : strikes) {
-            std::string symbol = optionsClient_->create_symbol(optionsClient_->normalize_symbol(optionsClient_->getSymbol()), expiry, strike);
+            std::string symbol = optionsClient_->create_symbol(optionsClient_->normalize_symbol(asset_), expiry, strike);
             newSubs.push_back(symbol);
             optionsClient_->subscribe_ticker(symbol);
         }

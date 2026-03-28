@@ -40,19 +40,19 @@ DeribitClient::DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tc
             setHost(HOST);
             setPort(PORT);     
             
-            auto now = floor<std::chrono::days>(system_clock::now());   
-            auto day = time_point_cast<std::chrono::days>(now);
+            auto now = floor<std::chrono::day>(system_clock::now());   
+            auto ref_day= time_point_cast<std::chrono::day>(now);
 
         int businessDaysCount = 0;
 
         while (businessDaysCount < 10) {
             // Get weekday in UTC
-            weekday wd{day};
+            weekday wd{ref_day};
             if (wd != Sunday && wd != Saturday) {
-                trackedExpiries_.push_back(format_date(day));
+                trackedExpiries_.push_back(format_date(ref_day));
                 ++businessDaysCount;
             }
-            day += days{1};
+            ref_day += day{1};
         }
  }
 
@@ -103,6 +103,7 @@ void DeribitClient::subscribe_ticker(const std::string& symbol) {
     subscribedTickers_.insert(symbol);
 }
 
+// NOTE: for deribit we default to agg2 (approx every second) updates this may not be optimal (and we take 10 orderbook levels)
 void DeribitClient::unsubscribe_ticker(const std::string& symbol) {
     if (!beast::get_lowest_layer(*ws_).is_open()) {
         std::cerr << "Cannot unsubscribe with closed WebSocket";
@@ -120,13 +121,31 @@ void DeribitClient::unsubscribe_ticker(const std::string& symbol) {
         "method": "public/unsubscribe",
         "params": {{
             "channels": [
-                0 : "ticker.{}.agg2"
+                "ticker.{}.agg2"
             ]
         }}
     }})", nextId_++, symbol);
 
     ws_->async_write(net::buffer(unsubReq));
     this->subscribedTickers_.erase(symbol);
+}
+
+void DeribitClient::subscribe_orderbook(const std::string& symbol) {
+    if (!beast::get_lowest_layer(*ws_).is_open()) {
+        std::cout << "Cannot Subscribe with Closed WebSocket";
+        return;
+    }
+
+    std::string unsubReq = fmt::format(R"({
+        "jsonrpc": "2.0",
+        "id", {},
+        "method": "public/subscribe
+        "params": {{
+            "channels": [
+                "book.{}.none.10.agg2"
+            ]
+        }}
+        }))", nextId_++, symbol);
 }
 
 void DeribitClient::subscribe_tracked(double spotPrice) {
@@ -140,7 +159,7 @@ void DeribitClient::subscribe_tracked(double spotPrice) {
     }
 }
 
-nlohmann::json DeribitClient::processPayload(const std::string& msg) {
+nlohmann::json DeribitClient::parsePayload(const std::string& msg) {
     try {
         auto j = json::parse(msg);
         nlohmann::json normalized;

@@ -78,9 +78,6 @@ void MarketDataManager::processMessage(json payload) {
 }
 
 
-void DataManager::tick() {
-	
-	processPayloads();
-
+void MarketDataManager::tick() {
 
 }

@@ -49,7 +49,7 @@ public:
 	void do_connect(tcp::resolver::results_type results);
 	void do_ssl_handshake();
 	void do_ws_handshake();
-	void subscribe();
+	void subscribe(const std::string& symbol, const std::string& target);
 	void do_read();
 	void reset();
 
@@ -61,6 +61,8 @@ public:
 	std::string getTarget() const { return target_; }
 	bool hasMessages();
 	nlohmann::json getNextMessage();
+
+
 
 protected:
 	net::io_context& ioc_;

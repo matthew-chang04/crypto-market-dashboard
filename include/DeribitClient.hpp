@@ -21,9 +21,10 @@ public:
     std::string format_date(std::chrono::system_clock::time_point day);
     std::string create_symbol(const std::string& base, const std::string& expiry, double strike);
 
-    void subscribe_ticker(const std::string& symbol);
-    void unsubscribe_ticker(const std::string& symbol);
+    void subscribe_ticker(const std::string& symbol) override;
+    void unsubscribe_ticker(const std::string& symbol) override;
 
+    void subscribe_orderbook(const std::string& symbol) override;
     void subscribe_tracked(double spotPrice);
     nlohmann::json parsePayload(const std::string& msg) override;
 

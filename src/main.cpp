@@ -1,5 +1,4 @@
 #include "CoinbaseClient.hpp"
-#include "DeribitClient.hpp"
 #include "ClientManager.hpp"
 #include <iostream>
 #include <err.h>
@@ -11,7 +10,7 @@
 int main(int argc, char * argv[]) // args: <exchange> <coin> <datatype>
 {
 	
-	ClientManager clientManager;
+	ClientManager clientManager{"BTC"};
 
 	clientManager.addFeed("Coinbase", CoinbaseClient::HOST, CoinbaseClient::PORT, "BTC-USD");
 	clientManager.addFeed("Deribit", DeribitClient::HOST, DeribitClient::PORT, "BTC-USD");

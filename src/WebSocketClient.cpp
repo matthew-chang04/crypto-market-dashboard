@@ -116,8 +116,8 @@ void WebSocketClient::do_ws_handshake() {
 		[self](beast::error_code ec) {
 			if (ec) return self->retryStart(ec);
 			std::cout << "Sucessfully connected to" << self->host_ << std::endl;
-
-			self->subscribe();
+			
+			self->do_read();
 		});
 }
 
@@ -149,13 +149,13 @@ void WebSocketClient::reset() {
 	start();
 }
 
-void WebSocketClient::subscribe() {
-	if (target_ == "orderbook") {
-		subscribe_orderbook();
-	} else if (target_ == "ticker") {
-		subscribe_ticker(); 
+void WebSocketClient::subscribe(const std::string& symbol, const std::string& target) {
+	if (strcmp(target.c_str(), "orderbook") == 0) {
+		subscribe_orderbook(symbol);
+	} else if (strcmp(target.c_str(), "ticker") == 0) {
+		subscribe_ticker(symbol); 
 	} else {
-		std::cerr << "Unknown subscription target: " << target_ << std::endl;
+		std::cerr << "Unknown subscription target: " << target << std::endl;
 	}
 	do_read();
 }
