@@ -26,7 +26,7 @@
 #include <stdexcept>
 #include <chrono>
 
-namespace http = beast::http;           
+namespace http = beast::http;
 namespace websocket = beast::websocket; 
 namespace net = boost::asio;           
 using tcp = boost::asio::ip::tcp;      
@@ -40,21 +40,21 @@ DeribitClient::DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tc
             setHost(HOST);
             setPort(PORT);     
             
-            auto now = floor<std::chrono::day>(system_clock::now());   
-            auto ref_day= time_point_cast<std::chrono::day>(now);
+        auto now = std::chrono::system_clock::now();   
+        auto ref_days= std::chrono::duration_cast<std::chrono::days>(now);
 
         int businessDaysCount = 0;
 
         while (businessDaysCount < 10) {
             // Get weekday in UTC
-            weekday wd{ref_day};
+            weekday wd{ref_days};
             if (wd != Sunday && wd != Saturday) {
-                trackedExpiries_.push_back(format_date(ref_day));
+                trackedExpiries_.push_back(format_date(ref_days));
                 ++businessDaysCount;
             }
-            ref_day += day{1};
+            ref_days += day{1};
         }
- }
+}
 
 std::string DeribitClient::normalize_symbol(const std::string& symbol) {
     std::string normalized(symbol);
