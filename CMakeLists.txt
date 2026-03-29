@@ -5,12 +5,13 @@ project(terminal VERSION 1.0 LANGUAGES CXX)
 set(CMAKE_CXX_STANDARD 20)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 
-add_executable(Exec
+add_executable(exec
 	src/main.cpp
 	src/WebSocketClient.cpp
 	src/ClientManager.cpp
 	src/DeribitClient.cpp
 	src/CoinbaseClient.cpp
+	src/DataManager.cpp
 	)
 
 find_package(Boost REQUIRED COMPONENTS system)
@@ -18,7 +19,7 @@ find_package(nlohmann_json 3.6.1 REQUIRED)
 find_package(OpenSSL REQUIRED)
 find_package(fmt REQUIRED)
 
-target_link_libraries(Exec PRIVATE
+target_link_libraries(exec PRIVATE
 	Boost::system
 	OpenSSL::SSL
 	OpenSSL::Crypto
@@ -27,5 +28,5 @@ target_link_libraries(Exec PRIVATE
 	)
 
 
-target_include_directories(Exec PRIVATE ./include)
+target_include_directories(exec PRIVATE ./include)
 

@@ -3,7 +3,9 @@
 #include <queue>
 #include <mutex>
 #include <nlohmann/json.hpp>
-#include "OrderBook.hpp"
+
+using json = nlohmann::json;
+
 struct SpotTick {
     double price;
     double quantity;
@@ -36,8 +38,6 @@ class MarketDataManager {
     std::unordered_map<std::string, OptionTick> optionTicks_;
     std::mutex optionMutex_;
 
-    OrderBook ob_;
-
 	void processNewTicker(const json& payload, std::chrono::system_clock::time_point timestamp);
 	void processNewOptionTick(const json& payload, std::chrono::system_clock::time_point timestamp);
 public:
@@ -50,8 +50,6 @@ public:
 
     void addOptionTick(OptionTick tick, const std::string& key);
     OptionTick getOptionTick(const std::string& key);
-
-    void startOrderBook();
 
 	void tick();
 

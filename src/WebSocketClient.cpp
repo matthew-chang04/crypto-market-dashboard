@@ -116,7 +116,7 @@ void WebSocketClient::do_ws_handshake() {
 		[self](beast::error_code ec) {
 			if (ec) return self->retryStart(ec);
 			std::cout << "Sucessfully connected to" << self->host_ << std::endl;
-			
+			self->setInterrupted(false);
 			self->do_read();
 		});
 }

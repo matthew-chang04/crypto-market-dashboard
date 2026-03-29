@@ -14,6 +14,7 @@ void ClientManager::run(int numThreads) {
     for (int i = 0; i < numThreads; ++i) {
         pool_.emplace_back([this]() {
             try {
+                std::cout << "Running Thread" << std::endl;
                 ioc_.run();
             } catch (const std::exception& e) {
                 std::cerr << "Error in thread: " << e.what() << std::endl;
@@ -40,7 +41,12 @@ void ClientManager::addOptionFeed(std::string host, std::string port, std::strin
 
 void ClientManager::startFeeds() {
 	for (auto client : clients_) {
-		client->start(); 
+		client->start();
+        while (client->isInterrupted()) {
+            std::cout << "Waiting for client..." << std::endl;
+            continue;
+        }
+
 		client->subscribe(asset_, "ticker"); // default to ticker for now until orderbook logic is built
 	}
 }

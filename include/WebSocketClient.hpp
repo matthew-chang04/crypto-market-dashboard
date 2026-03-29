@@ -43,7 +43,7 @@ public:
 
 	void stop();
 	void retryStart(beast::error_code ec);
-	virtual nlohmann::json parsePayload(const std::string& message);
+	virtual nlohmann::json parsePayload(const std::string& message) = 0;
 	void start();	
 	void do_resolve();
 	void do_connect(tcp::resolver::results_type results);

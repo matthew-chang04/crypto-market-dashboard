@@ -39,10 +39,10 @@ void MarketDataManager::processNewTicker(const json& payload, std::chrono::syste
 }
 
 void MarketDataManager::processNewOptionTick(const json& payload, std::chrono::system_clock::time_point timestamp) {
-    std::string id = payload['id'].get<std::string>();
-    double price = payload['price'].get<double>();
-    double quantity = payload['quantity'].get<double>();
-    double iv = payload['IV'].get<double>();
+    std::string id = payload["id"].get<std::string>();
+    double price = payload["price"].get<double>();
+    double quantity = payload["quantity"].get<double>();
+    double iv = payload["IV"].get<double>();
 
     OptionTick newTick{price, quantity, iv, timestamp};
     addOptionTick(newTick, id);
@@ -50,8 +50,7 @@ void MarketDataManager::processNewOptionTick(const json& payload, std::chrono::s
 
 void MarketDataManager::processMessage(json payload) {
 
-        std::string string_timestamp = payload["timestamp"];
-        std::istringstream(string_timestamp);
+        std::string string_timestamp = payload["timestamp"].get<std::string>();
         std::tm tm = {};
 
         auto stream = std::istringstream(string_timestamp);

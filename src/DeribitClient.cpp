@@ -35,28 +35,46 @@ using json = nlohmann::json;
 const std::string DeribitClient::HOST = "wss://www.deribit.com/ws/api/v2";
 const std::string DeribitClient::PORT = "";
 
+constexpr const char* subTemplate = R"({{
+        "jsonrpc": "2.0",
+        "id": {0},
+        "me thod": "public/subscribe",
+        "params": {{
+            "channels": ["{1}"]
+        }}
+    }})";
+
+constexpr const char* unsubTemplate = R"({{
+        "jsonrpc": "2.0",
+        "id": {0},
+        "method": "public/unsubscribe",
+        "params": {{
+            "channels": ["{1}"]
+        }}
+    }})";
+
+
 DeribitClient::DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string& target, std::string& symbol)
         : WebSocketClient(ioc, sslCtx, resolver, target, symbol) {
             setHost(HOST);
             setPort(PORT);     
-            
-        auto now = std::chrono::system_clock::now();   
-        auto ref_days= std::chrono::duration_cast<std::chrono::days>(now);
 
+        auto now = std::chrono::system_clock::now();
+        std::chrono::sys_days now_days = std::chrono::floor<std::chrono::days>(now);
         int businessDaysCount = 0;
 
         while (businessDaysCount < 10) {
             // Get weekday in UTC
-            weekday wd{ref_days};
+            weekday wd{now_days};
             if (wd != Sunday && wd != Saturday) {
-                trackedExpiries_.push_back(format_date(ref_days));
+                trackedExpiries_.push_back(format_date(now_days));
                 ++businessDaysCount;
             }
-            ref_days += day{1};
+            now_days += std::chrono::days{1};
         }
 }
 
-std::string DeribitClient::normalize_symbol(const std::string& symbol) {
+std::string DeribitClient::normalize_symbol(const std::string& symbol) {    
     std::string normalized(symbol);
     std::transform(normalized.begin(), normalized.end(), normalized.begin(), ::toupper);
     return normalized;
@@ -74,7 +92,7 @@ std::string DeribitClient::format_date(std::chrono::system_clock::time_point day
 }
 
 std::string DeribitClient::create_symbol(const std::string& base, const std::string& expiry, double strike) {    
-    const std::string symbol = fmt::format("{}-{}-{}-C", base, expiry, static_cast<int>(strike));
+    const std::string symbol = fmt::format("{0}-{1}-{2}-C", base, expiry, static_cast<int>(strike));
     // example: BTC-30JUN23-30000-C
     return symbol;
 }
@@ -90,14 +108,7 @@ void DeribitClient::subscribe_ticker(const std::string& symbol) {
         return;
     }
 
-    std::string subReq = fmt::format(R"({{
-        "jsonrpc": "2.0",
-        "id": {},
-        "method": "public/subscribe",
-        "params": {{
-            "channels": ["ticker.{}"]
-        }}
-    }})", nextId_++, symbol);
+    std::string subReq = fmt::format(subTemplate, nextId_++, symbol);
 
     ws_->async_write(net::buffer(subReq));
     subscribedTickers_.insert(symbol);
@@ -115,16 +126,9 @@ void DeribitClient::unsubscribe_ticker(const std::string& symbol) {
         return;
     }
 
-    std::string unsubReq = fmt::format(R"({{
-        "jsonrpc": "2.0",
-        "id": {},
-        "method": "public/unsubscribe",
-        "params": {{
-            "channels": [
-                "ticker.{}.agg2"
-            ]
-        }}
-    }})", nextId_++, symbol);
+    std::string channel = "ticker." + symbol;
+
+    std::string unsubReq = fmt::format(unsubTemplate, nextId_++, channel);
 
     ws_->async_write(net::buffer(unsubReq));
     this->subscribedTickers_.erase(symbol);
@@ -136,16 +140,10 @@ void DeribitClient::subscribe_orderbook(const std::string& symbol) {
         return;
     }
 
-    std::string unsubReq = fmt::format(R"({
-        "jsonrpc": "2.0",
-        "id", {},
-        "method": "public/subscribe
-        "params": {{
-            "channels": [
-                "book.{}.none.10.agg2"
-            ]
-        }}
-        }))", nextId_++, symbol);
+    std::string channel = "book." + symbol + ".agg2";
+    std::string subReq = fmt::format(subTemplate, nextId_++, symbol);
+
+    ws_->async_write(net::buffer(subReq));
 }
 
 void DeribitClient::subscribe_tracked(double spotPrice) {

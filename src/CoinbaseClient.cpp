@@ -5,6 +5,18 @@
 const std::string CoinbaseClient::HOST = "wss://ws-feed.exchange.coinbase.com";
 const std::string CoinbaseClient::PORT = ""; // No port
 
+constexpr const char* subTemplate = R"({{
+        "type": "subscribe", 
+        "channels":["level2"], 
+        "product_ids": ["{0}"], 
+    }})";
+
+constexpr const char* unsubTemplate = R"({{
+        "type": "unsubscribe", 
+        "channels":["level2"], 
+        "product_ids": ["{0}"], 
+    }})";
+    
 std::string CoinbaseClient::normalize_symbol(const std::string& symbol) {
     std::string normalized;
     for (char ch : symbol) {
@@ -20,11 +32,7 @@ void CoinbaseClient::subscribe_orderbook(const std::string& symbol) {
         return;
     }
 
-    std::string subReq = fmt::format(R"({
-        "type": "subscribe", 
-        "channels":["level2"], 
-        "product_ids": ["{}"], 
-        }))", symbol);
+    std::string subReq = fmt::format(subTemplate, symbol);
 
     ws_->async_write(net::buffer(subReq));
 
@@ -36,11 +44,7 @@ void CoinbaseClient::subscribe_ticker(const std::string& symbol) {
         return;
     }
 
-    std::string subReq = fmt::format(R"({
-        "type": "subscribe", 
-        "product_ids": ["{}"],
-        "channels": ["ticker"] 
-        }))", symbol);
+    std::string subReq = fmt::format(subTemplate, symbol);
 
     ws_->async_write(net::buffer(subReq));
 }
@@ -51,11 +55,7 @@ void CoinbaseClient::unsubscribe_ticker(const std::string& symbol) {
         return;
     }
 
-    std::string unsubReq = fmt::format(R"({
-        "type": "unsubscribe",
-        "product_ids": ["{}"],
-        "channels": ["ticker"]
-        }))", symbol);
+    std::string unsubReq = fmt::format(unsubTemplate, symbol);
 
     ws_->async_write(net::buffer(unsubReq));
 }
