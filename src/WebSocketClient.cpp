@@ -75,6 +75,8 @@ void WebSocketClient::do_resolve() {
     resolver_.async_resolve(host_, port_, 
         [self](beast::error_code ec, tcp::resolver::results_type results) {
             if (ec) return self->retryStart(ec);
+
+			std::cout << "doing connect" << std::endl;
             self->do_connect(results);
         });
 }
@@ -89,6 +91,8 @@ void WebSocketClient::do_connect(tcp::resolver::results_type results) {
 				beast::error_code ec(static_cast<int>(::ERR_get_error()), net::error::get_ssl_category());
 				return self->retryStart(ec);
 			}
+
+			std::cout << "doing ssl handshake" << std::endl;
 			self->do_ssl_handshake();
 		});
 }

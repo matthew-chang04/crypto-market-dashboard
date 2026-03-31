@@ -55,6 +55,8 @@ void ClientManager::stopFeeds() {
     for (auto client : clients_) {
         client->stop();
     }
+
+    workGuard_.reset();
 }
 
 void ClientManager::sendData() {

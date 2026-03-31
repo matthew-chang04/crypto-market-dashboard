@@ -17,7 +17,7 @@ using tcp = boost::asio::ip::tcp;
 
 class ClientManager {
     public:
-        ClientManager(const std::string& asset): asset_{asset}, ioc_{}, sslCtx_{boost::asio::ssl::context::tlsv12_client}, resolver_{ioc_}, dataManager_{std::make_unique<MarketDataManager>()} {
+        ClientManager(const std::string& asset): asset_{asset}, ioc_{}, workGuard_{boost::asio::make_work_guard(ioc_)}, sslCtx_{boost::asio::ssl::context::tlsv12_client}, resolver_{ioc_}, dataManager_{std::make_unique<MarketDataManager>()} {
         
             sslCtx_.set_options(boost::asio::ssl::context::default_workarounds);
             sslCtx_.set_verify_mode(boost::asio::ssl::verify_peer);
@@ -39,6 +39,7 @@ class ClientManager {
 
         std::string asset_;
         boost::asio::io_context ioc_;
+        boost::asio::executor_work_guard<boost::asio::io_context::executor_type> workGuard_;
         boost::asio::ssl::context sslCtx_;
         tcp::resolver resolver_;
         std::vector<std::thread> pool_;
