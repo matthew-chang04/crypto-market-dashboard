@@ -32,7 +32,7 @@ namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;      
 using json = nlohmann::json;
 
-const std::string DeribitClient::HOST = "wss://www.deribit.com/ws/api/v2";
+const std::string DeribitClient::HOST = "wss://test.deribit.com/ws/api/v2";
 const std::string DeribitClient::PORT = "";
 
 constexpr const char* subTemplate = R"({{

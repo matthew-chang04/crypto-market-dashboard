@@ -2,7 +2,7 @@
 #include <string>
 #include <cctype>
 
-const std::string CoinbaseClient::HOST = "wss://ws-feed.exchange.coinbase.com";
+const std::string CoinbaseClient::HOST = "wss://ws-feed-public.sandbox.exchange.coinbase.com";
 const std::string CoinbaseClient::PORT = ""; // No port
 
 constexpr const char* subTemplate = R"({{

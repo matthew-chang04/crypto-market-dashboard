@@ -56,6 +56,10 @@ void ClientManager::stopFeeds() {
         client->stop();
     }
 
+    for (auto& thread : pool_) {
+        thread.join();
+    }
+
     workGuard_.reset();
 }
 
