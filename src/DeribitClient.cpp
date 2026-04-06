@@ -32,8 +32,8 @@ namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;      
 using json = nlohmann::json;
 
-const std::string DeribitClient::HOST = "wss://test.deribit.com/ws/api/v2";
-const std::string DeribitClient::PORT = "";
+const std::string DeribitClient::HOST = "test.deribit.com/ws/api/v2";
+const std::string DeribitClient::PORT = "443";
 
 constexpr const char* subTemplate = R"({{
         "jsonrpc": "2.0",

@@ -18,7 +18,7 @@ int main(int argc, char * argv[]) // args: <exchange> <coin> <datatype>
 	std::cout << "add deribit" << std::endl;
 	clientManager.addFeed("Deribit", DeribitClient::HOST, DeribitClient::PORT, "BTC-USD");
 
-	clientManager.run(2);
+	clientManager.run(3);
 	clientManager.startFeeds();
 
 	std::cout << "tick" << std::endl;

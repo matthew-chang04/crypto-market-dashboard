@@ -30,7 +30,8 @@ namespace websocket = beast::websocket;
 namespace net = boost::asio;           
 using tcp = boost::asio::ip::tcp;
 
-void WebSocketClient::start() {  
+void WebSocketClient::start() { 
+	std::cout << "WebSocketClient::start() host=" << host_ << " target=" << target_ << std::endl;
     do_resolve();
 }
 

@@ -2,8 +2,8 @@
 #include <string>
 #include <cctype>
 
-const std::string CoinbaseClient::HOST = "wss://ws-feed-public.sandbox.exchange.coinbase.com";
-const std::string CoinbaseClient::PORT = ""; // No port
+const std::string CoinbaseClient::HOST = "ws-feed-public.sandbox.exchange.coinbase.com";
+const std::string CoinbaseClient::PORT = "443";
 
 constexpr const char* subTemplate = R"({{
         "type": "subscribe", 
