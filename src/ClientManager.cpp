@@ -31,7 +31,7 @@ void ClientManager::addFeed(const std::string& exchange, std::string host, std::
     } else if (strcmp(exchange.c_str(), "Deribit") == 0) {
         client = std::make_shared<DeribitClient>(ioc_, sslCtx_, resolver_, target, asset_);
     }
-    
+     
     clients_.push_back(client);
 }
 
