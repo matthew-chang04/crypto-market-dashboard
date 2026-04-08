@@ -43,7 +43,6 @@ void ClientManager::startFeeds() {
 	for (auto client : clients_) {
 		client->start();
         while (client->isInterrupted()) {
-            std::cout << "Waiting for client..." << std::endl;
             continue;
         }
 
