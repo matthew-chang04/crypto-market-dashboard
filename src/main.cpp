@@ -13,10 +13,10 @@ int main(int argc, char * argv[]) // args: <exchange> <coin> <datatype>
 	ClientManager clientManager{"BTC"};
 
 	std::cout << "add coinbase" << std::endl;
-	clientManager.addFeed("Coinbase", CoinbaseClient::HOST, CoinbaseClient::PORT, "BTC-USD");
+	clientManager.addFeed("Coinbase", CoinbaseClient::HOST, CoinbaseClient::PORT, "/");
 	
 	std::cout << "add deribit" << std::endl;
-	clientManager.addFeed("Deribit", DeribitClient::HOST, DeribitClient::PORT, "BTC-USD");
+	clientManager.addFeed("Deribit", DeribitClient::HOST, DeribitClient::PORT, "/");
 
 	clientManager.run(3);
 	clientManager.startFeeds();

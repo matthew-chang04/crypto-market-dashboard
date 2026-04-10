@@ -101,7 +101,7 @@ void WebSocketClient::do_connect(tcp::resolver::results_type results) {
 void WebSocketClient::do_ssl_handshake() {
 	std::shared_ptr<WebSocketClient> self = shared_from_this();
 	ws_->next_layer().set_verify_callback(net::ssl::host_name_verification(host_));
-
+	
 	ws_->set_option(websocket::stream_base::timeout::suggested(beast::role_type::client));
 	ws_->set_option(websocket::stream_base::decorator(
 		[](websocket::request_type& req) {
@@ -111,13 +111,16 @@ void WebSocketClient::do_ssl_handshake() {
 	ws_->next_layer().async_handshake(net::ssl::stream_base::client, 
 		[self](beast::error_code ec) {
 			if (ec) return self->retryStart(ec);
+
+			std::cout << "Performing WS Handshake" << std::endl;
 			return self->do_ws_handshake();
 		});
 }
 
 void WebSocketClient::do_ws_handshake() {
 	std::shared_ptr<WebSocketClient> self = shared_from_this();
-	self->ws_->async_handshake(host_, target_, 
+	const std::string& host_port = host_ + ":" + port_;
+	ws_->async_handshake(host_port, target_, 
 		[self](beast::error_code ec) {
 			if (ec) return self->retryStart(ec);
 			std::cout << "Sucessfully connected to" << self->host_ << std::endl;

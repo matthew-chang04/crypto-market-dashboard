@@ -21,6 +21,8 @@ class ClientManager {
         
             sslCtx_.set_options(boost::asio::ssl::context::default_workarounds);
             sslCtx_.set_verify_mode(boost::asio::ssl::verify_peer);
+            SSL_CTX_set_default_verify_paths(sslCtx_.native_handle());
+
         }
         
         void addFeed(const std::string& exchange, std::string host, std::string port, std::string target);
