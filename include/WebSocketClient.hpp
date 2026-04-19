@@ -59,6 +59,7 @@ public:
 	void do_ws_handshake();
 	void subscribe(const std::string& symbol, const std::string& target);
 	void do_read();
+	void do_write(const std::string& subReq);
 	void reset();
 
 	bool isInterrupted() const { return interrupted_; }

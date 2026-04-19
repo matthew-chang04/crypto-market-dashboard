@@ -35,6 +35,7 @@ void MarketDataManager::processNewTicker(const json& payload, std::chrono::syste
     double quantity = std::strtod(quantity_str.c_str(), nullptr);
 
     SpotTick newTick{price, quantity, timestamp};
+    std::cout << "Latest Tick: { quantity: " << newTick.quantity << ", price: " << newTick.price << std::endl;
     addSpotTick(newTick);
 }
 

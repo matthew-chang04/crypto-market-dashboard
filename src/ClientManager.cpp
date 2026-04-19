@@ -41,11 +41,13 @@ void ClientManager::addOptionFeed(std::string host, std::string port, std::strin
 
 void ClientManager::startFeeds() {
 	for (auto client : clients_) {
+        std::cout << "starting next client" << std::endl;
 		client->start();
         while (client->isInterrupted()) {
             continue;
         }
-
+        
+        std::cout << "Subscribing to asset " << asset_ << std::endl;
 		client->subscribe(asset_, "ticker"); // default to ticker for now until orderbook logic is built
 	}
 }
@@ -75,7 +77,7 @@ void ClientManager::updateATM(double spot, int strikeRange) {
     double atmStrike = std::round(spot / strikeRange) * strikeRange;
 
     std::vector<double> strikes;
-    for (int i = -strikeRange; i <= strikeRange; ++i) {
+    for (int i = -strikeRange; i <= strikeRange ; ++i) {
         double strike = atmStrike + i * strikeRange;
         if (strike > 0) { // avoid negative/zero strikes
             strikes.push_back(strike);

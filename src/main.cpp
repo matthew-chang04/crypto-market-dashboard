@@ -16,11 +16,13 @@ int main(int argc, char * argv[]) // args: <exchange> <coin> <datatype>
 	clientManager.addFeed("Coinbase", CoinbaseClient::HOST, CoinbaseClient::PORT, "/");
 	
 	std::cout << "add deribit" << std::endl;
-	clientManager.addFeed("Deribit", DeribitClient::HOST, DeribitClient::PORT, "/");
+	clientManager.addFeed("Deribit", DeribitClient::HOST, DeribitClient::PORT, "/ws/api/v2");
 
 	clientManager.run(3);
 	clientManager.startFeeds();
 
-	std::cout << "tick" << std::endl;
+	while (true) {
+		clientManager.sendData();
+	}	
 	return 0;
 }

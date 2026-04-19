@@ -32,13 +32,13 @@ namespace net = boost::asio;
 using tcp = boost::asio::ip::tcp;      
 using json = nlohmann::json;
 
-const std::string DeribitClient::HOST = "test.deribit.com/ws/api/v2";
+const std::string DeribitClient::HOST = "test.deribit.com";
 const std::string DeribitClient::PORT = "443";
 
 constexpr const char* subTemplate = R"({{
         "jsonrpc": "2.0",
         "id": {0},
-        "me thod": "public/subscribe",
+        "method": "public/subscribe",
         "params": {{
             "channels": ["{1}"]
         }}
@@ -108,9 +108,10 @@ void DeribitClient::subscribe_ticker(const std::string& symbol) {
         return;
     }
 
-    std::string subReq = fmt::format(subTemplate, nextId_++, symbol);
-
-    ws_->async_write(net::buffer(subReq));
+    std::string channel = "ticker." + symbol + "_USDT.agg2";
+    std::string subReq = fmt::format(subTemplate, nextId_++, channel);
+    
+    do_write(subReq);
     subscribedTickers_.insert(symbol);
 }
 
@@ -141,7 +142,7 @@ void DeribitClient::subscribe_orderbook(const std::string& symbol) {
     }
 
     std::string channel = "book." + symbol + ".agg2";
-    std::string subReq = fmt::format(subTemplate, nextId_++, symbol);
+    std::string subReq = fmt::format(subTemplate, nextId_++, channel);
 
     ws_->async_write(net::buffer(subReq));
 }

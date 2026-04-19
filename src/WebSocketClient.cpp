@@ -150,9 +150,25 @@ void WebSocketClient::do_read() {
 			}
 			std::string msg = beast::buffers_to_string(self->readDump_.data());
 			self->messageQueue_.push(self->parsePayload(msg));
+			std::cout << "Response Message: " << msg << std::endl;
 			self->readDump_.consume(self->readDump_.size());
 			self->do_read();
 		});
+}
+
+void WebSocketClient::do_write(const std::string &subReq) {
+	
+	std::cout << "Writing to WS..." << std::endl;
+
+	auto self = shared_from_this();
+	ws_->async_write(net::buffer(subReq), [self, subReq](beast::error_code ec, size_t bytes) {
+
+    	if (ec) { 	
+			std::cout << "Write error encountered: " << ec.message() << " continuing..." << std::endl;
+			return;
+		}
+     	std::cout << "Successfully wrote " << subReq  << std::endl;
+    });
 }
 
 void WebSocketClient::reset() {
@@ -168,7 +184,6 @@ void WebSocketClient::subscribe(const std::string& symbol, const std::string& ta
 	} else {
 		std::cerr << "Unknown subscription target: " << target << std::endl;
 	}
-	do_read();
 }
 
 bool WebSocketClient::hasMessages() {
