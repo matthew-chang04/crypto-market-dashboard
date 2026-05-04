@@ -47,7 +47,7 @@ void CoinbaseClient::subscribe_ticker(const std::string& symbol) {
     std::string subReq = fmt::format(subTemplate, symbol);
 
     ws_->async_write(net::buffer(subReq));
-}
+} 
 
 void CoinbaseClient::unsubscribe_ticker(const std::string& symbol) {
     if (!beast::get_lowest_layer(*ws_).is_open()) {
