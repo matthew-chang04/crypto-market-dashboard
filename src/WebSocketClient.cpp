@@ -149,8 +149,15 @@ void WebSocketClient::do_read() {
 				return;
 			}
 			std::string msg = beast::buffers_to_string(self->readDump_.data());
-			self->messageQueue_.push(self->parsePayload(msg));
+
+			nlohmann::json parsed = self->parsePayload(msg);
+
 			std::cout << "Response Message: " << msg << std::endl;
+			if (parsed) {
+				self->messageQueue_.push(parsed);
+			} else {
+				std::cout << "ERROR: Parsing failed. Ignoring payload" << std::endl;
+			}
 			self->readDump_.consume(self->readDump_.size());
 			self->do_read();
 		});
@@ -196,5 +203,7 @@ nlohmann::json WebSocketClient::getNextMessage() {
 	}
 	nlohmann::json msg = messageQueue_.front();
 	messageQueue_.pop();
+
+	std::cout << msg;
 	return msg;
 }

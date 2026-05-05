@@ -167,17 +167,25 @@ nlohmann::json DeribitClient::parsePayload(const std::string& msg) {
         double last_quantity = j["params"]["data"]["last_quantity"].get<double>();
         double iv = j["params"]["data"]["mark_iv"].get<double>();
         std::string name = j["params"]["data"]["instrument_name"].get<std::string>();
+        int64_t ms = j["params"]["data"]["timestamp"].get<int64_t>();
+
+        auto timestamp = std::chrono::system_clock::time_point{milliseconds(ms)};
+        std::time_t time = std::chrono::system_clock::to_time_t(timestamp);
+        std::ostringstream oss;
+        oss << std::put_time(std::gmtime(&time), "%F%T");
+        std::string time_str = oss.str();
 
         normalized['type'] = 'option_tick';
         normalized["price"] = last_price;
         normalized["quantity"] = last_quantity;
         normalized["iv"] = iv;
         normalized["symbol"] = name;
+        normalized["timestamp"] = time_str;
 
         return normalized;
 
     } catch (const std::exception& e) {
         std::cerr << "JSON parse error: " << e.what() << std::endl;
-        return {};
+        return nullptr;
     }
 }
