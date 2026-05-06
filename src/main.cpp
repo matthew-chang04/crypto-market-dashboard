@@ -26,3 +26,4 @@ int main(int argc, char * argv[]) // args: <exchange> <coin> <datatype>
 	}	
 	return 0;
 }
+ 
