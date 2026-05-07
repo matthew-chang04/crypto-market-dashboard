@@ -151,9 +151,9 @@ void WebSocketClient::do_read() {
 			std::string msg = beast::buffers_to_string(self->readDump_.data());
 
 			nlohmann::json parsed = self->parsePayload(msg);
-
-			std::cout << "Response Message: " << msg << std::endl;
-			if (parsed) {
+			
+			std::cout << "Response Message: " << parsed << std::endl;
+			if (!parsed.is_null()) {
 				self->messageQueue_.push(parsed);
 			} else {
 				std::cout << "ERROR: Parsing failed. Ignoring payload" << std::endl;
@@ -167,6 +167,13 @@ void WebSocketClient::do_write(const std::string &subReq) {
 	
 	std::cout << "Writing to WS..." << std::endl;
 
+	auto self = shared_from_this();
+	net::post(ws_->get_executor(), [self, subReq] {
+		{
+			std::lock_guard<std::mutex> lock(self->mutex_);
+			self->writeQueue_.push(subReq);
+		}
+	});
 	auto self = shared_from_this();
 	ws_->async_write(net::buffer(subReq), [self, subReq](beast::error_code ec, size_t bytes) {
 

@@ -4,7 +4,7 @@
 #include <sstream>
 #include <iostream>
 
-MarketDataManager::MarketDataManager() : latestSpotTick_{0, 0, std::chrono::system_clock::now()} {}
+MarketDataManager::MarketDataManager() : latestSpotTick_{0, std::chrono::system_clock::now()} {}
 
 void MarketDataManager::addSpotTick(SpotTick tick) {
     spotTicks_.push(tick);
@@ -34,8 +34,8 @@ void MarketDataManager::processNewTicker(const json& payload, std::chrono::syste
     double price = std::strtod(price_str.c_str(), nullptr);
     double quantity = std::strtod(quantity_str.c_str(), nullptr);
 
-    SpotTick newTick{price, quantity, timestamp};
-    std::cout << "Latest Tick: { quantity: " << newTick.quantity << ", price: " << newTick.price << std::endl;
+    SpotTick newTick{price, timestamp};
+    std::cout << "Latest Tick:"  << " price: " << newTick.price << std::endl;
     addSpotTick(newTick);
 }
 

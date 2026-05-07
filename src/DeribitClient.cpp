@@ -108,7 +108,7 @@ void DeribitClient::subscribe_ticker(const std::string& symbol) {
         return;
     }
 
-    std::string channel = "ticker." + symbol + "_USDT.agg2";
+    std::string channel = "ticker." + symbol + ".agg2";
     std::string subReq = fmt::format(subTemplate, nextId_++, channel);
     
     do_write(subReq);
@@ -127,7 +127,7 @@ void DeribitClient::unsubscribe_ticker(const std::string& symbol) {
         return;
     }
 
-    std::string channel = "ticker." + symbol;
+    std::string channel = "ticker." + symbol + ".agg2";
 
     std::string unsubReq = fmt::format(unsubTemplate, nextId_++, channel);
 
@@ -161,10 +161,11 @@ void DeribitClient::subscribe_tracked(double spotPrice) {
 nlohmann::json DeribitClient::parsePayload(const std::string& msg) {
     try {
         auto j = json::parse(msg);
+
+        std::cout << j << std::endl;
         nlohmann::json normalized;
 
         double last_price = j["params"]["data"]["last_price"].get<double>();
-        double last_quantity = j["params"]["data"]["last_quantity"].get<double>();
         double iv = j["params"]["data"]["mark_iv"].get<double>();
         std::string name = j["params"]["data"]["instrument_name"].get<std::string>();
         int64_t ms = j["params"]["data"]["timestamp"].get<int64_t>();
@@ -177,7 +178,6 @@ nlohmann::json DeribitClient::parsePayload(const std::string& msg) {
 
         normalized['type'] = 'option_tick';
         normalized["price"] = last_price;
-        normalized["quantity"] = last_quantity;
         normalized["iv"] = iv;
         normalized["symbol"] = name;
         normalized["timestamp"] = time_str;

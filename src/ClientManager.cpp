@@ -50,6 +50,13 @@ void ClientManager::startFeeds() {
         std::cout << "Subscribing to asset " << asset_ << std::endl;
 		client->subscribe(asset_, "ticker"); // default to ticker for now until orderbook logic is built
 	}
+
+    optionsClient_->start();
+    while (optionsClient_->isInterrupted()) {
+        continue;
+    }
+    updateATM(85000.0, 5000);
+
 }
 
 void ClientManager::stopFeeds() {
@@ -77,7 +84,7 @@ void ClientManager::updateATM(double spot, int strikeRange) {
     double atmStrike = std::round(spot / strikeRange) * strikeRange;
 
     std::vector<double> strikes;
-    for (int i = -strikeRange; i <= strikeRange ; ++i) {
+    for (int i = -2; i <= 2 ; ++i) {
         double strike = atmStrike + i * strikeRange;
         if (strike > 0) { // avoid negative/zero strikes
             strikes.push_back(strike);

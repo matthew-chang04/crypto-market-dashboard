@@ -8,7 +8,6 @@ using json = nlohmann::json;
 
 struct SpotTick {
     double price;
-    double quantity;
     std::chrono::system_clock::time_point timestamp;
 };
 

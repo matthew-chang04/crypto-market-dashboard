@@ -87,6 +87,7 @@ protected:
 	std::mutex mutex_;
 	beast::flat_buffer readDump_;
 	std::queue<nlohmann::json> messageQueue_;
+	std::queue<std::string> writeQueue_;
 
 	bool interrupted_;
 };
