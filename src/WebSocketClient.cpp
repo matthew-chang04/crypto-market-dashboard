@@ -163,7 +163,7 @@ void WebSocketClient::do_read() {
 		});
 }
 
-void WebSocketClient::do_write(const std::string &subReq) {
+void WebSocketClient::queue_write(const std::string &subReq) {
 	
 	std::cout << "Writing to WS..." << std::endl;
 
@@ -172,7 +172,9 @@ void WebSocketClient::do_write(const std::string &subReq) {
 		{
 			std::lock_guard<std::mutex> lock(self->mutex_);
 			self->writeQueue_.push(subReq);
+			if (self->writing_) return;
 		}
+		self->do_write();
 	});
 	auto self = shared_from_this();
 	ws_->async_write(net::buffer(subReq), [self, subReq](beast::error_code ec, size_t bytes) {
@@ -182,6 +184,31 @@ void WebSocketClient::do_write(const std::string &subReq) {
 			return;
 		}
      	std::cout << "Successfully wrote " << subReq  << std::endl;
+    });
+}
+
+void WebSocketClient::do_write() {
+	
+	std::string subReq;
+	{
+		std::lock_guard<std::mutex> lock(mutex_);
+		if (writeQueue_.empty()) {
+			writing_ = false;
+			return;
+		}
+		subReq = writeQueue_.front();
+	}
+	auto self = shared_from_this();
+	ws_->async_write(net::buffer(subReq), [self, subReq](beast::error_code ec, size_t bytes) {
+
+    	if (ec) { 	
+			std::cout << "Write error encountered: " << ec.message() << " continuing..." << std::endl;
+			return;
+		}
+     	std::cout << "Successfully wrote " << subReq  << std::endl;
+		net::post(self->ws_->get_executor(), [self]() {
+			self->do_write();
+		});
     });
 }
 

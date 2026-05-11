@@ -59,7 +59,8 @@ public:
 	void do_ws_handshake();
 	void subscribe(const std::string& symbol, const std::string& target);
 	void do_read();
-	void do_write(const std::string& subReq);
+	void do_write();
+	void queue_write(const std::string& subReq);
 	void reset();
 
 	bool isInterrupted() const { return interrupted_; }
@@ -88,6 +89,7 @@ protected:
 	beast::flat_buffer readDump_;
 	std::queue<nlohmann::json> messageQueue_;
 	std::queue<std::string> writeQueue_;
+	bool writing_;
 
 	bool interrupted_;
 };
