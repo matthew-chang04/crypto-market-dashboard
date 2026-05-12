@@ -176,7 +176,7 @@ void WebSocketClient::queue_write(const std::string &subReq) {
 		}
 		self->do_write();
 	});
-	auto self = shared_from_this();
+
 	ws_->async_write(net::buffer(subReq), [self, subReq](beast::error_code ec, size_t bytes) {
 
     	if (ec) { 	
