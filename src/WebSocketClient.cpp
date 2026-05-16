@@ -176,15 +176,6 @@ void WebSocketClient::queue_write(const std::string &subReq) {
 		}
 		self->do_write();
 	});
-
-	ws_->async_write(net::buffer(subReq), [self, subReq](beast::error_code ec, size_t bytes) {
-
-    	if (ec) { 	
-			std::cout << "Write error encountered: " << ec.message() << " continuing..." << std::endl;
-			return;
-		}
-     	std::cout << "Successfully wrote " << subReq  << std::endl;
-    });
 }
 
 void WebSocketClient::do_write() {
@@ -196,7 +187,8 @@ void WebSocketClient::do_write() {
 			writing_ = false;
 			return;
 		}
-		subReq = writeQueue_.front();
+		subReq = writeQueue_.back();
+		writeQueue_.pop();
 	}
 	auto self = shared_from_this();
 	ws_->async_write(net::buffer(subReq), [self, subReq](beast::error_code ec, size_t bytes) {

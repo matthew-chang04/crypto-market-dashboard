@@ -55,7 +55,13 @@ void ClientManager::startFeeds() {
     while (optionsClient_->isInterrupted()) {
         continue;
     }
-    updateATM(85000.0, 5000);
+
+    double atm_strike{0.0};
+    do {
+        atm_strike = dataManager_->getLatestSpotTick().price;
+    } while (!atm_strike);
+
+    updateATM(atm_strike, atm_strike / 17);
 
 }
 

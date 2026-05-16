@@ -17,7 +17,7 @@ public:
 
     DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string& target, std::string& symbol);
 
-    std::string normalize_symbol(const std::string& symbol) override;
+    const std::string normalize_symbol(const std::string& symbol) override;
     std::string format_date(std::chrono::system_clock::time_point day);
     std::string create_symbol(const std::string& base, const std::string& expiry, double strike);
 

@@ -74,7 +74,7 @@ DeribitClient::DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tc
         }
 }
 
-std::string DeribitClient::normalize_symbol(const std::string& symbol) {    
+const std::string DeribitClient::normalize_symbol(const std::string& symbol) {    
     std::string normalized(symbol);
     std::transform(normalized.begin(), normalized.end(), normalized.begin(), ::toupper);
     return normalized;
@@ -111,7 +111,7 @@ void DeribitClient::subscribe_ticker(const std::string& symbol) {
     std::string channel = "ticker." + symbol + ".agg2";
     std::string subReq = fmt::format(subTemplate, nextId_++, channel);
     
-    do_write(subReq);
+    queue_write(subReq);
     subscribedTickers_.insert(symbol);
 }
 
@@ -131,7 +131,7 @@ void DeribitClient::unsubscribe_ticker(const std::string& symbol) {
 
     std::string unsubReq = fmt::format(unsubTemplate, nextId_++, channel);
 
-    ws_->async_write(net::buffer(unsubReq));
+    queue_write(unsubReq);
     this->subscribedTickers_.erase(symbol);
 }
 
@@ -144,7 +144,7 @@ void DeribitClient::subscribe_orderbook(const std::string& symbol) {
     std::string channel = "book." + symbol + ".agg2";
     std::string subReq = fmt::format(subTemplate, nextId_++, channel);
 
-    ws_->async_write(net::buffer(subReq));
+    queue_write(subReq);
 }
 
 void DeribitClient::subscribe_tracked(double spotPrice) {
@@ -176,7 +176,7 @@ nlohmann::json DeribitClient::parsePayload(const std::string& msg) {
         oss << std::put_time(std::gmtime(&time), "%F%T");
         std::string time_str = oss.str();
 
-        normalized['type'] = 'option_tick';
+        normalized["type"] = "option_tick";
         normalized["price"] = last_price;
         normalized["iv"] = iv;
         normalized["symbol"] = name;

@@ -12,7 +12,7 @@ class CoinbaseClient: public WebSocketClient {
                 setPort(PORT);
             }
 
-        std::string normalize_symbol(const std::string& symbol) override;
+        const std::string normalize_symbol(const std::string& symbol) override;
         void subscribe_orderbook(const std::string& symbol) override; 
         void subscribe_ticker(const std::string& symbol) override;
         void unsubscribe_ticker(const std::string& symbol) override;
