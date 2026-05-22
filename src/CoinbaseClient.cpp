@@ -81,3 +81,4 @@ nlohmann::json CoinbaseClient::parsePayload(const std::string& msg) {
 
     return normalized;
 }
+
