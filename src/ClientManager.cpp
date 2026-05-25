@@ -51,17 +51,17 @@ void ClientManager::startFeeds() {
 		client->subscribe(asset_, "ticker"); // default to ticker for now until orderbook logic is built
 	}
 
-    optionsClient_->start();
-    while (optionsClient_->isInterrupted()) {
-        continue;
-    }
+    // optionsClient_->start();
+    // while (optionsClient_->isInterrupted()) {
+    //     continue;
+    // }
 
-    double atm_strike{0.0};
-    do {
-        atm_strike = dataManager_->getLatestSpotTick().price;
-    } while (!atm_strike);
+    // double atm_strike{0.0};
+    // do {
+    //     atm_strike = dataManager_->getLatestSpotTick().price;
+    // } while (!atm_strike);
 
-    updateATM(atm_strike, atm_strike / 17);
+    // updateATM(atm_strike, atm_strike / 17);
 
 }
 

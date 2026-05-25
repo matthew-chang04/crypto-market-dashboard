@@ -8,20 +8,20 @@ const std::string CoinbaseClient::PORT = "443";
 constexpr const char* subTemplate = R"({{
         "type": "subscribe", 
         "channels":[
-            "level2",
-            {
-                "product_ids": ["{0}"], 
-            }
+            {{            
+                "name" : "level2",
+                "product_ids": ["{0}"]
+            }}
         ]
     }})";
 
 constexpr const char* unsubTemplate = R"({{
         "type": "unsubscribe",
         "channels":[
-            "level2",
-            {
+            {{            
+                "name" : "level2",
                 "product_ids": ["{0}"]
-            }
+            }}
         ]   
     }})";
     
@@ -39,10 +39,7 @@ void CoinbaseClient::subscribe_orderbook(const std::string& symbol) {
         std::cerr << "Cannot Connect to Closed WebSocket";
         return;
     }
-
-    const std::string norm_symbol = normalize_symbol(symbol);
-    std::string subReq = fmt::format(subTemplate, norm_symbol);
-    queue_write(subReq);
+    queue_write(buildRequestMsg("subscribe", symbol));
 }
 
 void CoinbaseClient::subscribe_ticker(const std::string& symbol) {
@@ -51,9 +48,7 @@ void CoinbaseClient::subscribe_ticker(const std::string& symbol) {
         return;
     }
 
-    const std::string norm_symbol = normalize_symbol(symbol);
-    std::string subReq = fmt::format(subTemplate, norm_symbol);
-    queue_write(subReq);
+    queue_write(buildRequestMsg("unsubscribe", symbol));
 } 
 
 void CoinbaseClient::unsubscribe_ticker(const std::string& symbol) {
@@ -82,3 +77,15 @@ nlohmann::json CoinbaseClient::parsePayload(const std::string& msg) {
     return normalized;
 }
 
+nlohmann::json CoinbaseClient::buildRequestMsg(const std::string& action, const std::string& product) {
+    
+    std::string symbol = normalize_symbol(product);
+        j["type"] = "subscribe";
+    j["channels"] = nlohmann::json::array();
+    j["channels"].push_back({
+        {"name", "ticker"},
+        {"product_ids", nlohmann::json::array({ symbol })}
+    });
+
+    return j;
+}

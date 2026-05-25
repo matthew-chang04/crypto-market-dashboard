@@ -15,8 +15,8 @@ int main(int argc, char * argv[]) // args: <exchange> <coin> <datatype>
 	std::cout << "add coinbase" << std::endl;
 	clientManager.addFeed("Coinbase", CoinbaseClient::HOST, CoinbaseClient::PORT, "/");
 	
-	std::cout << "add deribit" << std::endl;
-	clientManager.addOptionFeed(DeribitClient::HOST, DeribitClient::PORT, "/ws/api/v2");
+	// std::cout << "add deribit" << std::endl;
+	// clientManager.addOptionFeed(DeribitClient::HOST, DeribitClient::PORT, "/ws/api/v2");
 
 	clientManager.run(3);
 	clientManager.startFeeds();

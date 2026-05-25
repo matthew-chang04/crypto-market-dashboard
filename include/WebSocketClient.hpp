@@ -67,6 +67,7 @@ public:
 	void setInterrupted(bool value) { interrupted_ = value; }
 	void setHost(const std::string& host) { host_ = host; }
 	void setPort(const std::string port) { port_ = port; }
+	nlohmann::json buildRequestMsg(const std::string& action, const std::string& product);
 
 	std::string getTarget() const { return target_; }
 	bool hasMessages();
