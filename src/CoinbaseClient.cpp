@@ -80,7 +80,8 @@ nlohmann::json CoinbaseClient::parsePayload(const std::string& msg) {
 nlohmann::json CoinbaseClient::buildRequestMsg(const std::string& action, const std::string& product) {
     
     std::string symbol = normalize_symbol(product);
-        j["type"] = "subscribe";
+    nlohmann::json j;
+    j["type"] = "subscribe";
     j["channels"] = nlohmann::json::array();
     j["channels"].push_back({
         {"name", "ticker"},
