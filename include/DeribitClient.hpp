@@ -27,6 +27,7 @@ public:
     void subscribe_orderbook(const std::string& symbol) override;
     void subscribe_tracked(double spotPrice);
     nlohmann::json parsePayload(const std::string& msg) override;
+    nlohmann::json buildRequestMsg(const std::string& action, const std::string& product) override;
 
     std::vector<std::string> trackedExpiries_;
     std::set<std::string> subscribedTickers_;

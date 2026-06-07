@@ -129,7 +129,7 @@ void DeribitClient::unsubscribe_ticker(const std::string& symbol) {
 
     std::string channel = "ticker." + symbol + ".agg2";
 
-    std::string unsubReq = fmt::format(unsubTemplate, nextId_++, channel);
+    std::string unsubReq = buildRequestMsg("unsubscribe", channel);
 
     queue_write(unsubReq);
     this->subscribedTickers_.erase(symbol);
@@ -142,7 +142,7 @@ void DeribitClient::subscribe_orderbook(const std::string& symbol) {
     }
 
     std::string channel = "book." + symbol + ".agg2";
-    std::string subReq = fmt::format(subTemplate, nextId_++, channel);
+    std::string subReq = buildRequestMsg("subscribe", channel);
 
     queue_write(subReq);
 }
@@ -188,4 +188,18 @@ nlohmann::json DeribitClient::parsePayload(const std::string& msg) {
         std::cerr << "JSON parse error: " << e.what() << std::endl;
         return nullptr;
     }
+}
+
+nlohmann::json DeribitClient::buildRequestMsg(const std::string& action, const std::string& product) {
+
+    nlohmann::json req;
+
+    req["jsonrpc"] = "2.0";
+    req["id"] = std::to_string(nextId_++);
+    req["method"] = "public/" + action;
+    req["params"] = nlohmann::json::object({
+        { "channels", nlohmann::json::array({ product })}
+    });
+
+    return req;
 }
