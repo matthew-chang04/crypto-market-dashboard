@@ -201,5 +201,5 @@ nlohmann::json DeribitClient::buildRequestMsg(const std::string& action, const s
         { "channels", nlohmann::json::array({ product })}
     });
 
-    return req;
+    return req.dump();
 }

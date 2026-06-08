@@ -88,5 +88,5 @@ nlohmann::json CoinbaseClient::buildRequestMsg(const std::string& action, const 
         {"product_ids", nlohmann::json::array({ symbol })}
     });
 
-    return j;
+    return j.dump();
 }
