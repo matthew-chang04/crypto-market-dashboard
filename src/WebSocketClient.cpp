@@ -151,15 +151,26 @@ void WebSocketClient::do_read() {
 			std::string msg = beast::buffers_to_string(self->readDump_.data());
 
 			nlohmann::json parsed = self->parsePayload(msg);
-			
-			std::cout << "Response Message: " << parsed << std::endl;
-			if (!parsed.is_null()) {
-				self->messageQueue_.push(parsed);
-			} else {
-				std::cout << "ERROR: Parsing failed. Ignoring payload" << std::endl;
-			}
 			self->readDump_.consume(self->readDump_.size());
+
 			self->do_read();
+
+			net::post(self->ws_->get_executor(), [self, msg = std::move(msg)] {
+				try {
+					nlohmann::json parsed = self->parsePayload(msg);
+
+					std::cout << "Response Message: " << parsed << std::endl;
+					if (!parsed.is_null()) {
+						std::lock_guard<std::mutex> lock(self->mutex_);
+						self->messageQueue_.push(parsed);
+					} else {
+						std::cout << "ERROR: Parsing failed. Ignoring payload" << std::endl;
+					}
+				} catch (const std::exception& e) {
+					std::cerr << "ERROR: Parsing failed. " << e.what() << std::endl;
+				}
+
+			});
 		});
 }
 
@@ -224,6 +235,7 @@ bool WebSocketClient::hasMessages() {
 }
 
 nlohmann::json WebSocketClient::getNextMessage() {
+	std::lock_guard<std::mutex> lock(mutex_);
 	if (messageQueue_.empty()) {
 		return {};
 	}
