@@ -25,7 +25,7 @@ constexpr const char* unsubTemplate = R"({{
         ]   
     }})";
     
-const std::string CoinbaseClient::normalize_symbol(const std::string& symbol) {
+const std::string& CoinbaseClient::normalizeSymbol(const std::string& symbol) {
     std::string normalized;
     for (char ch : symbol) {
         normalized += std::toupper(ch);
@@ -34,52 +34,47 @@ const std::string CoinbaseClient::normalize_symbol(const std::string& symbol) {
     return normalized;
 }
 
-void CoinbaseClient::subscribe_orderbook(const std::string& symbol) {
-    if (!beast::get_lowest_layer(*ws_).is_open()) {
-        std::cerr << "Cannot Connect to Closed WebSocket";
-        return;
+std::optional<MarketEvent> CoinbaseClient::parsePayload(const std::string& msg) {
+    try {
+
+        nlohmann::json payload = nlohmann::json::parse(msg);
+
+        std::cout << payload << std::endl;
+        std::string type = payload["type"].get<std::string>();
+
+        std::cout << type << std::endl;
+        if (type == "ticker") {
+            TickEvent event { };
+
+            std::string string_timestamp = payload["timestamp"].get<std::string>();
+            std::tm tm = {};
+
+            auto stream = std::istringstream(string_timestamp);
+            stream >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
+
+            std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::from_time_t(std::mktime(&tm));
+
+            event.timestamp = timestamp;
+            event.instrument = payload["product_id"].get<std::string>();
+            
+            std::string price_str = payload["price"].get<std::string>();
+            std::string size_str = payload["last_size"].get<std::string>();
+
+            event.price = std::stod(price_str);
+            event.size = std::stod(size_str);
+            event.side = payload["side"];
+        } else {
+            return std::nullopt;
+        }
+         
+    } catch (const std::exception& e) {
+        return std::nullopt;
     }
-    queue_write(buildRequestMsg("subscribe", symbol));
 }
 
-void CoinbaseClient::subscribe_ticker(const std::string& symbol) {
-    if (!beast::get_lowest_layer(*ws_).is_open()) {
-        std::cerr << "Cannot Connect to Closed WebSocket";
-        return;
-    }
-
-    queue_write(buildRequestMsg("unsubscribe", symbol));
-} 
-
-void CoinbaseClient::unsubscribe_ticker(const std::string& symbol) {
-    if (!beast::get_lowest_layer(*ws_).is_open()) {
-        std::cerr << "Cannot Communicate with Closed WebSocket";
-        return;
-    }
-
-    const std::string symbol_norm = normalize_symbol(symbol);
-    std::string unsubReq = fmt::format(unsubTemplate, symbol_norm);
-    queue_write(unsubReq);
-}
-
-nlohmann::json CoinbaseClient::parsePayload(const std::string& msg) {
-    nlohmann::json payload = nlohmann::json::parse(msg);
-    std::string type = payload["type"].get<std::string>();
-
-    nlohmann::json normalized;
-    if (strcmp(type.c_str(), "ticker") == 0) {
-        normalized['type'] = 'ticker';
-        normalized["symbol"] = payload["product_id"];
-        normalized["price"] = std::stod(payload["price"].get<std::string>());
-        normalized["side"] = payload["side"];
-    }
-
-    return normalized;
-}
-
-nlohmann::json CoinbaseClient::buildRequestMsg(const std::string& action, const std::string& product) {
+const nlohmann::json& CoinbaseClient::buildRequestMsg(const std::string& action, const std::string& product) {
     
-    std::string symbol = normalize_symbol(product);
+    std::string symbol = normalizeSymbol(product);
     nlohmann::json j;
     j["type"] = "subscribe";
     j["channels"] = nlohmann::json::array();

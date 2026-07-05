@@ -1,32 +1,14 @@
+#include "DataContainers.hpp"
 #include <string>
 #include <unordered_map>
 #include <queue>
 #include <mutex>
 #include <nlohmann/json.hpp>
 
-using json = nlohmann::json;
-
-struct SpotTick {
-    double price;
-    std::chrono::system_clock::time_point timestamp;
-};
-
-
-struct OptionTick {
-    double price;
-    double quantity;
-    double IV;
-    std::chrono::system_clock::time_point timestamp;
-
-	std::string expiry;
-	std::string strike;
-
-};
-
 class MarketDataManager {
 	
 	std::string ticker;
-    std::unordered_map<std::string, json> newPayloads_;
+    std::unordered_map<std::string, MarketEvent> newPayloads_;
     std::mutex payloadMutex_;
 
     std::queue<SpotTick> spotTicks_;
@@ -37,12 +19,12 @@ class MarketDataManager {
     std::unordered_map<std::string, OptionTick> optionTicks_;
     std::mutex optionMutex_;
 
-	void processNewTicker(const json& payload, std::chrono::system_clock::time_point timestamp);
-	void processNewOptionTick(const json& payload, std::chrono::system_clock::time_point timestamp);
+	void processNewTicker(MarketEvent payload);
+	void processNewOptionTick(MarketEvent payload);
 public:
 
     MarketDataManager();
-    void processMessage(nlohmann::json payload);
+    void processMarketEvent(MarketEvent payload);
 
     void addSpotTick(SpotTick tick);
     SpotTick getLatestSpotTick();

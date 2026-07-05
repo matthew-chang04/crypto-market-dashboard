@@ -4,7 +4,7 @@
 #include <sstream>
 #include <iostream>
 
-MarketDataManager::MarketDataManager() : latestSpotTick_{0, std::chrono::system_clock::now()} {}
+MarketDataManager::MarketDataManager() : latestSpotTick_{0, 0, std::chrono::system_clock::now()} {}
 
 void MarketDataManager::addSpotTick(SpotTick tick) {
     spotTicks_.push(tick);
@@ -27,56 +27,19 @@ OptionTick MarketDataManager::getOptionTick(const std::string& key) {
     return OptionTick{0, 0, 0, std::chrono::system_clock::now()};
 }
 
-void MarketDataManager::processNewTicker(const json& payload, std::chrono::system_clock::time_point timestamp) {
-    std::string price_str = payload["price"];
-    std::string quantity_str = payload["quantity"];
+void MarketDataManager::processMarketEvent(MarketEvent payload) {
 
-    double price = std::strtod(price_str.c_str(), nullptr);
-    double quantity = std::strtod(quantity_str.c_str(), nullptr);
-
-    SpotTick newTick{price, timestamp};
-    std::cout << "Latest Tick:"  << " price: " << newTick.price << std::endl;
-    addSpotTick(newTick);
+    if (payload.holds_alternative<TickEvent>()) {
+        SpotTick tick;
+        tick.timestamp = payload.timestamp;
+        tick.price = payload.price;
+        tick.size = payload.size;
+        tick.side = payload.side;
+        addSpotTick(tick)
+    } else {
+        return
+    }
 }
-
-void MarketDataManager::processNewOptionTick(const json& payload, std::chrono::system_clock::time_point timestamp) {
-    std::string id = payload["id"].get<std::string>();
-    double price = payload["price"].get<double>();
-    double quantity = payload["quantity"].get<double>();
-    double iv = payload["IV"].get<double>();
-
-    OptionTick newTick{price, quantity, iv, timestamp};
-    addOptionTick(newTick, id);
-}
-
-void MarketDataManager::processMessage(json payload) {
-
-        std::string string_timestamp = payload["timestamp"].get<std::string>();
-        std::tm tm = {};
-
-        auto stream = std::istringstream(string_timestamp);
-        stream >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
-
-        std::chrono::system_clock::time_point timestamp = std::chrono::system_clock::from_time_t(std::mktime(&tm));
-        if (timestamp <= latestSpotTick_.timestamp) {
-            return;
-        }
-    
-    try {
-        std::string type = payload["type"].get<std::string>();
-        if (strcmp(type.c_str(), "ticker") == 0) {
-            processNewTicker(payload, timestamp);
-        } else if (strcmp(type.c_str(), "option") == 0) {
-            processNewOptionTick(payload, timestamp);
-        } else {
-            std::cout << "Message type not implemented: " << type << std::endl;
-        }
-    } catch (const std::exception& e) {
-        std::cout << "Error parsing payload: " << e.what() << std::endl;
-        std::cout << "Skipping..." << std::endl;   
-    }    
-}
-
 
 void MarketDataManager::tick() {
 

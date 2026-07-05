@@ -149,28 +149,25 @@ void WebSocketClient::do_read() {
 				return;
 			}
 			std::string msg = beast::buffers_to_string(self->readDump_.data());
-
-			nlohmann::json parsed = self->parsePayload(msg);
 			self->readDump_.consume(self->readDump_.size());
-
-			self->do_read();
 
 			net::post(self->ws_->get_executor(), [self, msg = std::move(msg)] {
 				try {
-					nlohmann::json parsed = self->parsePayload(msg);
+					std::cout << "Pre-parsed:" << msg << std::endl;
+					std::optional<MarketEvent> parsed = self->parsePayload(msg);
 
-					std::cout << "Response Message: " << parsed << std::endl;
-					if (!parsed.is_null()) {
+					if (parsed.has_value()) {
 						std::lock_guard<std::mutex> lock(self->mutex_);
-						self->messageQueue_.push(parsed);
+						self->messageQueue_.push(parsed.value());
 					} else {
-						std::cout << "ERROR: Parsing failed. Ignoring payload" << std::endl;
+						std::cout << "Parsing failed. Ignoring payload" << std::endl;
 					}
 				} catch (const std::exception& e) {
 					std::cerr << "ERROR: Parsing failed. " << e.what() << std::endl;
 				}
 
 			});
+			self->do_read();
 		});
 }
 
@@ -183,7 +180,10 @@ void WebSocketClient::queue_write(const std::string &subReq) {
 		{
 			std::lock_guard<std::mutex> lock(self->mutex_);
 			self->writeQueue_.push(subReq);
-			if (self->writing_) return;
+			if (self->writing_) {
+				std::cout << "writing exit" << std::endl;
+				return;
+			}
 		}
 		self->do_write();
 	});
@@ -196,10 +196,12 @@ void WebSocketClient::do_write() {
 		std::lock_guard<std::mutex> lock(mutex_);
 		if (writeQueue_.empty()) {
 			writing_ = false;
+			std::cout << "writing exit" << std::endl;
 			return;
 		}
 		subReq = writeQueue_.back();
 		writeQueue_.pop();
+		writing_ = true;
 	}
 	auto self = shared_from_this();
 	ws_->async_write(net::buffer(subReq), [self, subReq](beast::error_code ec, size_t bytes) {
@@ -221,10 +223,8 @@ void WebSocketClient::reset() {
 }
 
 void WebSocketClient::subscribe(const std::string& symbol, const std::string& target) {
-	if (strcmp(target.c_str(), "orderbook") == 0) {
-		subscribe_orderbook(symbol);
-	} else if (strcmp(target.c_str(), "ticker") == 0) {
-		subscribe_ticker(symbol); 
+	 if (target == "ticker") {
+		subTicker(symbol); 
 	} else {
 		std::cerr << "Unknown subscription target: " << target << std::endl;
 	}
@@ -234,14 +234,35 @@ bool WebSocketClient::hasMessages() {
 	return !messageQueue_.empty();
 }
 
-nlohmann::json WebSocketClient::getNextMessage() {
+MarketEvent WebSocketClient::getNextMessage() {
 	std::lock_guard<std::mutex> lock(mutex_);
 	if (messageQueue_.empty()) {
 		return {};
 	}
-	nlohmann::json msg = messageQueue_.front();
+	MarketEvent msg = messageQueue_.front();
 	messageQueue_.pop();
 
-	std::cout << msg;
+
 	return msg;
+}
+
+void WebSocketClient::subTicker(const std::string& instrument) {
+	if (!beast::get_lowest_layer(*ws_).is_open()) {
+        std::cerr << "Cannot Connect to Closed WebSocket";
+        return;
+    }
+
+	const std::string& symbol = normalizeSymbol(instrument);
+    queue_write(buildRequestMsg("subscribe", symbol));
+
+}
+
+void WebSocketClient::unsubTicker(const std::string& instrument) {
+	if (!beast::get_lowest_layer(*ws_).is_open()) {
+		std::cerr << "Cannot Connect to Closed WebSocket";
+		return;
+	}
+
+	const std::string& symbol = normalizeSymbol(instrument);
+	queue_write(buildRequestMsg("unsubscribe", symbol));
 }

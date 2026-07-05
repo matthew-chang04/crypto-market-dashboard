@@ -1,5 +1,5 @@
 #pragma once
-#include "ExchangeInterface.hpp"
+#include "DataContainers.hpp"
 #include <nlohmann/json.hpp>
 #include <boost/asio/strand.hpp>
 #include <boost/asio/ip/tcp.hpp>
@@ -33,7 +33,7 @@ namespace websocket = beast::websocket;
 namespace net = boost::asio;           
 using tcp = boost::asio::ip::tcp;     
 
-class WebSocketClient: public std::enable_shared_from_this<WebSocketClient>, public ExchangeInterface
+class WebSocketClient: public std::enable_shared_from_this<WebSocketClient>
 {
 public:
 	WebSocketClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver,  std::string target, std::string& symbol) : 
@@ -51,8 +51,6 @@ public:
 
 	void stop();
 	void retryStart(beast::error_code ec);
-	virtual nlohmann::json parsePayload(const std::string& message) = 0;
-	virtual nlohmann::json buildRequestMsg(const std::string& action, const std::string& product) = 0;
 
 	void start();	
 	void do_resolve();
@@ -72,8 +70,14 @@ public:
 
 	std::string getTarget() const { return target_; }
 	bool hasMessages();
-	nlohmann::json getNextMessage();
+	MarketEvent getNextMessage();
 
+	void subTicker(const std::string& instrument);
+	void unsubTicker(const std::string& instrument);
+
+	virtual const std::string& normalizeSymbol(const std::string& symbol) = 0;
+	virtual std::optional<MarketEvent> parsePayload(const std::string& message) = 0;
+	virtual const nlohmann::json& buildRequestMsg(const std::string& action, const std::string& product) = 0;
 
 
 protected:
@@ -89,9 +93,9 @@ protected:
 	std::string symbol_;
 	std::mutex mutex_;
 	beast::flat_buffer readDump_;
-	std::queue<nlohmann::json> messageQueue_;
+	std::queue<MarketEvent> messageQueue_;
 	std::queue<std::string> writeQueue_;
-	bool writing_;
+	bool writing_{false};
 
 	bool interrupted_;
 };
