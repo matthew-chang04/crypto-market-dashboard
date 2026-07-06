@@ -3,6 +3,7 @@
 #include <memory>
 #include <iostream>
 #include <stdexcept>
+#include <algorithm>
 
 namespace beast = boost::beast;   
 namespace http = beast::http;          
@@ -44,7 +45,7 @@ void ClientManager::startFeeds() {
         std::cout << "starting next client" << std::endl;
 		client->start();
         while (client->isInterrupted()) {
-            continue;
+            std::this_thread::yield();
         }
         
         std::cout << "Subscribing to asset " << asset_ << std::endl;
@@ -80,7 +81,7 @@ void ClientManager::stopFeeds() {
 void ClientManager::sendData() {
     for (std::shared_ptr<WebSocketClient> client : clients_) {
         while(client->hasMessages()) {
-            nlohmann::json msg = client->getNextMessage();
+            MarketEvent msg = client->getNextMessage();
             dataManager_->processMessage(msg);
         }
     }
@@ -100,7 +101,7 @@ void ClientManager::updateATM(double spot, int strikeRange) {
     std::vector<std::string> newSubs;
     for (std::string expiry : optionsClient_->trackedExpiries_) {
         for (double strike : strikes) {
-            std::string symbol = optionsClient_->create_symbol(optionsClient_->normalize_symbol(asset_), expiry, strike);
+            std::string symbol = optionsClient_->create_symbol(optionsClient_->normalizeSymbol(asset_), expiry, strike);
             newSubs.push_back(symbol);
             optionsClient_->subscribe_ticker(symbol);
         }

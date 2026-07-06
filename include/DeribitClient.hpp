@@ -17,7 +17,7 @@ public:
 
     DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tcp::resolver& resolver, std::string& target, std::string& symbol);
 
-    const std::string normalize_symbol(const std::string& symbol) override;
+    const std::string& normalizeSymbol(const std::string& symbol) override;
     std::string format_date(std::chrono::system_clock::time_point day);
     std::string create_symbol(const std::string& base, const std::string& expiry, double strike);
 
@@ -26,8 +26,8 @@ public:
 
     void subscribe_orderbook(const std::string& symbol) override;
     void subscribe_tracked(double spotPrice);
-    nlohmann::json parsePayload(const std::string& msg) override;
-    nlohmann::json buildRequestMsg(const std::string& action, const std::string& product) override;
+    std::optional<MarketEvent> parsePayload(const std::string& msg) override;
+    std::string buildRequestMsg(const std::string& action, const std::string& product) override;
 
     std::vector<std::string> trackedExpiries_;
     std::set<std::string> subscribedTickers_;

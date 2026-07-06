@@ -2,6 +2,8 @@
 #include "DeribitClient.hpp"
 #include "DataManager.hpp"
 #include <nlohmann/json.hpp>
+#include <algorithm>
+#include <cctype>
 #include <boost/beast/core.hpp>
 #include <boost/beast/websocket.hpp>
 #include <boost/beast/http.hpp>
@@ -74,9 +76,12 @@ DeribitClient::DeribitClient(net::io_context& ioc, net::ssl::context& sslCtx, tc
         }
 }
 
-const std::string DeribitClient::normalize_symbol(const std::string& symbol) {    
-    std::string normalized(symbol);
-    std::transform(normalized.begin(), normalized.end(), normalized.begin(), ::toupper);
+const std::string& DeribitClient::normalizeSymbol(const std::string& symbol) {
+    static std::string normalized;
+    normalized = symbol;
+    std::transform(normalized.begin(), normalized.end(), normalized.begin(), [](unsigned char c) {
+        return static_cast<char>(std::toupper(c));
+    });
     return normalized;
 }
 
@@ -158,39 +163,28 @@ void DeribitClient::subscribe_tracked(double spotPrice) {
     }
 }
 
-nlohmann::json DeribitClient::parsePayload(const std::string& msg) {
+std::optional<MarketEvent> DeribitClient::parsePayload(const std::string& msg) {
     try {
         auto j = json::parse(msg);
 
         std::cout << j << std::endl;
-        nlohmann::json normalized;
 
-        double last_price = j["params"]["data"]["last_price"].get<double>();
-        double iv = j["params"]["data"]["mark_iv"].get<double>();
-        std::string name = j["params"]["data"]["instrument_name"].get<std::string>();
-        int64_t ms = j["params"]["data"]["timestamp"].get<int64_t>();
+        TickEvent event{};
+        event.instrument = j["params"]["data"]["instrument_name"].get<std::string>();
+        event.price = j["params"]["data"]["last_price"].get<double>();
+        event.size = 1.0;
+        event.side = "unknown";
+        event.timestamp = std::chrono::system_clock::time_point{milliseconds(j["params"]["data"]["timestamp"].get<int64_t>())};
 
-        auto timestamp = std::chrono::system_clock::time_point{milliseconds(ms)};
-        std::time_t time = std::chrono::system_clock::to_time_t(timestamp);
-        std::ostringstream oss;
-        oss << std::put_time(std::gmtime(&time), "%F%T");
-        std::string time_str = oss.str();
-
-        normalized["type"] = "option_tick";
-        normalized["price"] = last_price;
-        normalized["iv"] = iv;
-        normalized["symbol"] = name;
-        normalized["timestamp"] = time_str;
-
-        return normalized;
+        return std::make_optional(MarketEvent{event});
 
     } catch (const std::exception& e) {
         std::cerr << "JSON parse error: " << e.what() << std::endl;
-        return nullptr;
+        return std::nullopt;
     }
 }
 
-nlohmann::json DeribitClient::buildRequestMsg(const std::string& action, const std::string& product) {
+std::string DeribitClient::buildRequestMsg(const std::string& action, const std::string& product) {
 
     nlohmann::json req;
 

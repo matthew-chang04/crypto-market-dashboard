@@ -75,9 +75,12 @@ public:
 	void subTicker(const std::string& instrument);
 	void unsubTicker(const std::string& instrument);
 
+	virtual void subscribe_ticker(const std::string& symbol) {}
+	virtual void unsubscribe_ticker(const std::string& symbol) {}
+	virtual void subscribe_orderbook(const std::string& symbol) {}
 	virtual const std::string& normalizeSymbol(const std::string& symbol) = 0;
 	virtual std::optional<MarketEvent> parsePayload(const std::string& message) = 0;
-	virtual const nlohmann::json& buildRequestMsg(const std::string& action, const std::string& product) = 0;
+	virtual std::string buildRequestMsg(const std::string& action, const std::string& product) = 0;
 
 
 protected:

@@ -166,8 +166,9 @@ void WebSocketClient::do_read() {
 					std::cerr << "ERROR: Parsing failed. " << e.what() << std::endl;
 				}
 
+				std::cout << "next read... " << std::endl;
+				self->do_read();
 			});
-			self->do_read();
 		});
 }
 

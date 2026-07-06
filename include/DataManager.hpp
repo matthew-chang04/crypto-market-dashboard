@@ -1,4 +1,5 @@
 #include "DataContainers.hpp"
+#include "AnalyticsEngine.hpp"
 #include <string>
 #include <unordered_map>
 #include <queue>
@@ -6,7 +7,8 @@
 #include <nlohmann/json.hpp>
 
 class MarketDataManager {
-	
+    
+    AnalyticsEngine analytics_;
 	std::string ticker;
     std::unordered_map<std::string, MarketEvent> newPayloads_;
     std::mutex payloadMutex_;
@@ -21,10 +23,13 @@ class MarketDataManager {
 
 	void processNewTicker(MarketEvent payload);
 	void processNewOptionTick(MarketEvent payload);
+
+
 public:
 
     MarketDataManager();
     void processMarketEvent(MarketEvent payload);
+    void processMessage(MarketEvent payload);
 
     void addSpotTick(SpotTick tick);
     SpotTick getLatestSpotTick();

@@ -4,7 +4,7 @@
 #include <sstream>
 #include <iostream>
 
-MarketDataManager::MarketDataManager() : latestSpotTick_{0, 0, std::chrono::system_clock::now()} {}
+MarketDataManager::MarketDataManager() : latestSpotTick_{0.0, 0.0, "", std::chrono::system_clock::now()} {}
 
 void MarketDataManager::addSpotTick(SpotTick tick) {
     spotTicks_.push(tick);
@@ -28,19 +28,20 @@ OptionTick MarketDataManager::getOptionTick(const std::string& key) {
 }
 
 void MarketDataManager::processMarketEvent(MarketEvent payload) {
-
-    if (payload.holds_alternative<TickEvent>()) {
+    if (std::holds_alternative<TickEvent>(payload)) {
+        TickEvent tick_event = std::get<TickEvent>(payload);
         SpotTick tick;
-        tick.timestamp = payload.timestamp;
-        tick.price = payload.price;
-        tick.size = payload.size;
-        tick.side = payload.side;
-        addSpotTick(tick)
-    } else {
-        return
+        tick.timestamp = tick_event.timestamp;
+        tick.price = tick_event.price;
+        tick.size = tick_event.size;
+        tick.side = tick_event.side;
+        addSpotTick(tick);
     }
 }
 
-void MarketDataManager::tick() {
+void MarketDataManager::processMessage(MarketEvent payload) {
+    processMarketEvent(std::move(payload));
+}
 
+void MarketDataManager::tick() {
 }

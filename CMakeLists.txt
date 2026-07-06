@@ -9,8 +9,8 @@ add_executable(exec
 	src/main.cpp
 	src/WebSocketClient.cpp
 	src/ClientManager.cpp
-	src/DeribitClient.cpp
 	src/CoinbaseClient.cpp
+	src/DeribitClient.cpp
 	src/DataManager.cpp
 	)
 

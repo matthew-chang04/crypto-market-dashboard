@@ -14,7 +14,7 @@ class CoinbaseClient: public WebSocketClient {
 
         const std::string& normalizeSymbol(const std::string& symbol) override;
         std::optional<MarketEvent> parsePayload(const std::string& msg) override;
-        const nlohmann::json& buildRequestMsg(const std::string& action, const std::string& product) override;
+        std::string buildRequestMsg(const std::string& action, const std::string& product) override;
 
 };
 
