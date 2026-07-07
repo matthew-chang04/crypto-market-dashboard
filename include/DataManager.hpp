@@ -9,14 +9,13 @@
 class MarketDataManager {
     
     AnalyticsEngine analytics_;
-	std::string ticker;
+
     std::unordered_map<std::string, MarketEvent> newPayloads_;
     std::mutex payloadMutex_;
 
-    std::queue<SpotTick> spotTicks_;
+    std::unordered_map<std::string, std::stack<SpotTick>> spotTicks_;
     std::mutex spotMutex_;
     int maxSpotTicks_ = 1000; // Maximum number of spot ticks to store
-    SpotTick latestSpotTick_;
 
     std::unordered_map<std::string, OptionTick> optionTicks_;
     std::mutex optionMutex_;
@@ -31,8 +30,8 @@ public:
     void processMarketEvent(MarketEvent payload);
     void processMessage(MarketEvent payload);
 
-    void addSpotTick(SpotTick tick);
-    SpotTick getLatestSpotTick();
+    void addSpotTick(const std::string& product, SpotTick tick);
+    SpotTick getLatestSpotTick(const std::string& key);
 
     void addOptionTick(OptionTick tick, const std::string& key);
     OptionTick getOptionTick(const std::string& key);

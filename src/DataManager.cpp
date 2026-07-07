@@ -4,14 +4,22 @@
 #include <sstream>
 #include <iostream>
 
-MarketDataManager::MarketDataManager() : latestSpotTick_{0.0, 0.0, "", std::chrono::system_clock::now()} {}
+MarketDataManager::MarketDataManager() {}
 
-void MarketDataManager::addSpotTick(SpotTick tick) {
-    spotTicks_.push(tick);
+void MarketDataManager::addSpotTick(const std::string& product, SpotTick tick) {
+    spotTicks_[product].emplace(tick);
 }
 
-SpotTick MarketDataManager::getLatestSpotTick() {
-    return latestSpotTick_;
+SpotTick MarketDataManager::getLatestSpotTick(const std::string& product) {
+    std::lock_guard<std::mutex> lock(spotMutex_);
+
+    const std::stack<SpotTick>& ticks = spotTicks_[product];
+
+    if (ticks.size() == 0) {
+        return SpotTick { 0, 0, "None", std::chrono::system_clock::now()};
+    }
+
+    return spotTicks_[product].top();
 }
 
 void MarketDataManager::addOptionTick(OptionTick tick, const std::string& key) {
@@ -35,7 +43,7 @@ void MarketDataManager::processMarketEvent(MarketEvent payload) {
         tick.price = tick_event.price;
         tick.size = tick_event.size;
         tick.side = tick_event.side;
-        addSpotTick(tick);
+        addSpotTick(tick_event.instrument, tick);
     }
 }
 
