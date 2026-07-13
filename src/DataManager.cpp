@@ -7,7 +7,12 @@
 MarketDataManager::MarketDataManager() {}
 
 void MarketDataManager::addSpotTick(const std::string& product, SpotTick tick) {
-    spotTicks_[product].emplace(tick);
+
+    if (analytics_ .contains(product)) {
+        analytics_[product].update(tick);
+    } else {
+        analytics_[product] = AnalyticsEngine(tick);
+    }
 }
 
 SpotTick MarketDataManager::getLatestSpotTick(const std::string& product) {
@@ -43,6 +48,8 @@ void MarketDataManager::processMarketEvent(MarketEvent payload) {
         tick.price = tick_event.price;
         tick.size = tick_event.size;
         tick.side = tick_event.side;
+        tick.buyAmt = tick_event.buyAmt;
+        // TODO : Add extras in, maybe a better way to scale this
         addSpotTick(tick_event.instrument, tick);
     }
 }

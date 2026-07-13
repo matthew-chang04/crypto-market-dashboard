@@ -1,13 +1,26 @@
 #pragma once
 #include <string>
+#include <chrono>
 #include "DataContainers.hpp"
 
 class RollingVWAP {
     
 };
 
-class RollingVol {
-
+class RollingVar {
+    public:
+        void onReturn(double ret);
+        double vol30s() const;
+        double vol5m() const;
+        
+        double getVar() const { return variance30s_; }
+    private:
+        std::chrono::system_clock::time_point interval30s_ = std::chrono::system_clock::now();
+        std::chrono::system_clock::time_point interval5m_ = std::chrono::system_clock::now(); 
+        double decay_ = 0.94;
+        double parkinson_;
+        double variance30s_;
+        double variance5m_;
 };
 
 class SpreadMetrics {
@@ -27,35 +40,39 @@ struct TradeMetrics {
     int tradesLastMinute_;
 };
 
-class InstrumentSnapshot {
-    private:
-        double lastTick_;
-        double buyVolume_;
-        double sellVolume_;
-        int tradesLastMinute_;
+struct InstrumentSnapshot {
+    
+    std::chrono::system_clock::time_point lastTickTime_;
+    double buyVolume_;
+    double sellVolume_;
+    int tradesLastMinute_;
 
-        double orderbookImbalance_;
+    double microPrice_;
+    double spread_;
+    double mid_;
 
+    double orderbookImbalance_;
 
-        double vol30s_;
-        double vol5m_;
-        double vwap_;
+    double variance_;
+    double vol30s_;
+    double vol5m_;
+    double vwap_;
 
-    public:
-        OrderbookMetrics orderbook_;
-        SpreadMetrics spread_; 
 };
 
 class AnalyticsEngine {
     private:
-        double getReturns(const std::string& product);
+        bool snapshotReady_;
+        SpotTick lastTick_;
+
+        RollingVar varMetrics_;
+        RollingVWAP vwap_;
+        double getReturns(const SpotTick& tick);
         InstrumentSnapshot snapshot_;
 
     public:
-
-        getSnap(const SpotTick& tick);
-        RollingVol vol30s_;
-        RollingVol vol5m_;
-        RollingVWAP vwap_;
+        AnalyticsEngine(const SpotTick& tick);
+        std::optional<InstrumentSnapshot> getSnap(const SpotTick& tick);
+        void update(const SpotTick& tick);
 
 };

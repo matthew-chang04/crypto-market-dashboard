@@ -8,7 +8,7 @@
 
 class MarketDataManager {
     
-    AnalyticsEngine analytics_;
+    std::unordered_map<std::string, AnalyticsEngine> analytics_;
 
     std::unordered_map<std::string, MarketEvent> newPayloads_;
     std::mutex payloadMutex_;

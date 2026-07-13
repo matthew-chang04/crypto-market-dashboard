@@ -10,6 +10,12 @@ struct TickEvent {
     double price;
     double size;
     std::string side;
+
+    double buyAmt;
+    double sellAmt;
+    double tradedAmt;
+    double bestAsk;
+    double bestBid;
 };
 
 using MarketEvent = std::variant<TickEvent>;
@@ -19,6 +25,12 @@ struct SpotTick {
     double size;
     std::string side;
     std::chrono::system_clock::time_point timestamp;
+ 
+    double buyAmt;
+    double sellAmt;
+    double tradedAmt;
+    double bestAsk;
+    double bestBid;
 };
 
 struct OptionTick {
