@@ -62,10 +62,8 @@ std::optional<MarketEvent> CoinbaseClient::parsePayload(const std::string& msg) 
             
             std::tm tm = {};
             std::istringstream stream(string_timestamp);
-
-            std::cout << "did get time run?" << std::endl;
             stream >> std::get_time(&tm, "%Y-%m-%dT%H:%M:%S");
-            std::cout << "get time ran successfully" << std::endl;
+            
             if (!stream || stream.fail()) {
                 std::cerr << "Failed to parse timestamp: " << string_timestamp << std::endl;
                 return std::nullopt;
@@ -81,20 +79,24 @@ std::optional<MarketEvent> CoinbaseClient::parsePayload(const std::string& msg) 
                 return std::nullopt;
             }
 
-            std::cout << "UTC seconds: " << seconds << std::endl;
             event.timestamp = std::chrono::system_clock::from_time_t(seconds);
 
-            std::cout << "timestamp created" << std::endl;
             event.instrument = payload["product_id"].get<std::string>();
 
-            std::cout << "produdct _id " << event.instrument << std::endl;
             std::string price_str = payload["price"].get<std::string>();
             std::string size_str = payload["last_size"].get<std::string>();
+            std::string best_bid_str = payload["best_bid"].get<std::string>();
+            std::string best_ask_str = payload["best_ask"].get<std::string>();
 
             std::cout << "price and size" << price_str << " " << size_str << std::endl;
             event.price = std::stod(price_str);
             event.size = std::stod(size_str);
             event.side = payload["side"].get<std::string>();
+            event.buyAmt = event.side == "buy" ? event.size : 0.0;
+            event.sellAmt = event.side == "sell" ? event.size : 0.0;
+            event.tradedAmt = event.size;
+            event.bestBid = std::stod(best_bid_str);
+            event.bestAsk = std::stod(best_ask_str);
 
             return std::make_optional(MarketEvent{event});
         } else {
@@ -112,7 +114,7 @@ std::string CoinbaseClient::buildRequestMsg(const std::string& action, const std
     j["type"] = "subscribe";
     j["channels"] = nlohmann::json::array();
     j["channels"].push_back({
-        {"name", "heartbeat"},
+        {"name", "ticker"},
         {"product_ids", nlohmann::json::array({ product })}
     });
 

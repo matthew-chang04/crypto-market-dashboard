@@ -12,6 +12,7 @@ add_executable(exec
 	src/CoinbaseClient.cpp
 	src/DeribitClient.cpp
 	src/DataManager.cpp
+	src/AnalyticsEngine.cpp
 	)
 
 find_package(Boost REQUIRED COMPONENTS system)

@@ -1,0 +1,67 @@
+[
+  {
+    "buyVolume": 0.01,
+    "mid": 99082.475,
+    "price": 100000.0,
+    "product": "BTC-USD",
+    "sellVolume": 0.0,
+    "spread": 1835.050000000003,
+    "timestamp": 1783996018000,
+    "tradesLastMinute": 0,
+    "variance": 0.0,
+    "vol30s": 0.0,
+    "vol5m": 0.0
+  },
+  {
+    "buyVolume": 0.0,
+    "mid": 99064.76000000001,
+    "price": 98164.95,
+    "product": "BTC-USD",
+    "sellVolume": 0.01,
+    "spread": 1870.479999999996,
+    "timestamp": 1783996020000,
+    "tradesLastMinute": 0,
+    "variance": 0.00034302592168764814,
+    "vol30s": 0.01852095898401722,
+    "vol5m": 0.01852095898401722
+  },
+  {
+    "buyVolume": 0.01,
+    "mid": 99064.76000000001,
+    "price": 100000.0,
+    "product": "BTC-USD",
+    "sellVolume": 0.0,
+    "spread": 1870.479999999996,
+    "timestamp": 1783996020000,
+    "tradesLastMinute": 0,
+    "variance": 0.0,
+    "vol30s": 0.0,
+    "vol5m": 0.0
+  },
+  {
+    "buyVolume": 0.01,
+    "mid": 99064.76000000001,
+    "price": 100000.0,
+    "product": "BTC-USD",
+    "sellVolume": 0.0,
+    "spread": 1870.479999999996,
+    "timestamp": 1783996022000,
+    "tradesLastMinute": 0,
+    "variance": 0.0,
+    "vol30s": 0.0,
+    "vol5m": 0.0
+  },
+  {
+    "buyVolume": 0.0,
+    "mid": 98527.725,
+    "price": 98129.52,
+    "product": "BTC-USD",
+    "sellVolume": 0.01,
+    "spread": 2944.550000000003,
+    "timestamp": 1783996022000,
+    "tradesLastMinute": 0,
+    "variance": 0.0003565279320330013,
+    "vol30s": 0.0188819472521507,
+    "vol5m": 0.0188819472521507
+  }
+]

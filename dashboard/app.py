@@ -1,60 +1,66 @@
+import json
+from pathlib import Path
+
 import pandas as pd
-import numpy as np
-import matplotlib.pyplot as plt
 import streamlit as st
 
 st.set_page_config(page_title="Crypto Market Dashboard", layout="wide")
 
 st.title("Crypto Market Dashboard")
-st.markdown("A dashboard to visualize cryptocurrency market data.")
+st.markdown("A lightweight view of the analytics snapshots emitted by the C++ data manager.")
+
+DATA_PATH = Path(__file__).resolve().parent / "analytics.json"
 
 st.sidebar.header("Filters")
-symbol = st.sidebar.selectbox("Select Coin", ["BTC", "ETH", "XRP"])
-expriry = st.sidebar.selectbox("Select Max Expiry", ["1M", "2w", "1w"])
-autoRefresh = st.sidebar.checkbox("Auto Refresh", value=True)
+auto_refresh = st.sidebar.checkbox("Auto refresh", value=True)
 
-# DEMO DATA (Coins and OPTIONS)
-demoOptionData = pd.DataFrame({
-    "strike": [30000, 35000, 40000, 45000, 50000],
-    "type": ["call", "call", "call", "put", "put"],
-    "expiry": ["1M", "1M", "2w", "1w", "1w"],
-    "expiryVals": [2, 2, 1, 0, 0],
-    "price": [1500, 1200, 800, 600, 400],
-    "IV" : [0.4, 0.45, 0.4, 0.35, 0.3]
-})
+if auto_refresh:
+    st.sidebar.caption("Refreshing on each rerun")
 
-demoOptionList = [
-    [600, 400], # 1w
-    [800, 900],      # 2w
-    [1500, 1200] # 1M
-]
 
-demoCoinData = pd.DataFrame({
-    "price": np.random.rand(100).cumsum() * 40000,
-    "timestamp" : pd.date_range(start="2023-01-01", periods=100, freq='H')
-})
+def load_analytics_data(path: Path) -> pd.DataFrame:
+    if not path.exists():
+        return pd.DataFrame(columns=["product", "timestamp", "price", "buyVolume", "sellVolume", "tradesLastMinute", "mid", "spread", "variance", "vol30s", "vol5m"])
 
-col1, col2 = st.columns([2, 2])
+    with path.open("r", encoding="utf-8") as handle:
+        payload = json.load(handle)
 
-with col1:
-    st.subheader(f"{symbol} Price Chart")
+    if not payload:
+        return pd.DataFrame(columns=["product", "timestamp", "price", "buyVolume", "sellVolume", "tradesLastMinute", "mid", "spread", "variance", "vol30s", "vol5m"])
 
-    fig, ax = plt.subplots()
-    ax.plot(demoCoinData["timestamp"], demoCoinData["price"], label=f"{symbol} Price")
-    ax.set_xlabel("Time")
-    ax.set_ylabel("Price (USD)")
-    ax.legend()
-    st.pyplot(fig)
+    frame = pd.DataFrame(payload)
+    frame["timestamp"] = pd.to_datetime(frame["timestamp"], unit="ms")
+    return frame
 
-with col2:
-    st.subheader(f"{symbol} Options Data (Max Expiry: {expriry})")
+analytics_df = load_analytics_data(DATA_PATH)
 
-    fig, ax2 = plt.subplots()
-    im = ax2.imshow(demoOptionList, cmap='viridis', aspect='auto')
+if analytics_df.empty:
+    st.info("No analytics snapshots have been written yet. Start the C++ feed and the dashboard will populate automatically.")
+    st.stop()
 
-    ax.set_xlabel("Moneyness")
-    ax.set_ylabel("Time to Maturity")
+symbols = sorted(analytics_df["product"].dropna().unique().tolist())
+symbol = st.sidebar.selectbox("Instrument", symbols)
 
-    ax.set_yticks(np.arange(demoOptionData["expiryVals"].max()))
-    ax.set_xticks(np.arange(len(demoOptionData["strike"])))
-    st.pyplot(fig)
+filtered = analytics_df[analytics_df["product"] == symbol].copy()
+filtered = filtered.sort_values("timestamp")
+
+if filtered.empty:
+    st.warning("No rows are available for the selected instrument yet.")
+    st.stop()
+
+latest = filtered.iloc[-1]
+
+col1, col2, col3, col4 = st.columns(4)
+col1.metric("Latest price", f"{latest['price']:,.2f}")
+col2.metric("Spread", f"{latest['spread']:,.4f}")
+col3.metric("Vol 30s", f"{latest['vol30s']:,.4f}")
+col4.metric("Vol 5m", f"{latest['vol5m']:,.4f}")
+
+st.subheader(f"{symbol} price")
+st.line_chart(filtered, x="timestamp", y=["price"])
+
+st.subheader(f"{symbol} volatility")
+st.line_chart(filtered, x="timestamp", y=["vol30s", "vol5m"])
+
+st.subheader("Recent metrics")
+st.dataframe(filtered[["timestamp", "price", "buyVolume", "sellVolume", "tradesLastMinute", "spread", "variance", "vol30s", "vol5m"]].tail(20), use_container_width=True)

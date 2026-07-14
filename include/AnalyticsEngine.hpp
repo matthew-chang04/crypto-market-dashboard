@@ -9,11 +9,11 @@ class RollingVWAP {
 
 class RollingVar {
     public:
-        void onReturn(double ret);
+        void onReturn(double ret, bool snapshotReady);
         double vol30s() const;
         double vol5m() const;
         
-        double getVar() const { return variance30s_; }
+        double getVar() const;
     private:
         std::chrono::system_clock::time_point interval30s_ = std::chrono::system_clock::now();
         std::chrono::system_clock::time_point interval5m_ = std::chrono::system_clock::now(); 
@@ -57,6 +57,7 @@ struct InstrumentSnapshot {
     double vol30s_;
     double vol5m_;
     double vwap_;
+    double lastPrice_;
 
 };
 
@@ -72,7 +73,7 @@ class AnalyticsEngine {
 
     public:
         AnalyticsEngine(const SpotTick& tick);
-        std::optional<InstrumentSnapshot> getSnap(const SpotTick& tick);
+        std::optional<InstrumentSnapshot> getSnap();
         void update(const SpotTick& tick);
 
 };

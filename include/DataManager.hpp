@@ -4,6 +4,7 @@
 #include <unordered_map>
 #include <queue>
 #include <mutex>
+#include <vector>
 #include <nlohmann/json.hpp>
 
 class MarketDataManager {
@@ -20,6 +21,10 @@ class MarketDataManager {
     std::unordered_map<std::string, OptionTick> optionTicks_;
     std::mutex optionMutex_;
 
+    std::unordered_map<std::string, std::vector<InstrumentSnapshot>> analyticsHistory_;
+    std::mutex analyticsHistoryMutex_;
+    std::string analyticsExportPath_ = "dashboard/analytics.json";
+
 	void processNewTicker(MarketEvent payload);
 	void processNewOptionTick(MarketEvent payload);
 
@@ -35,6 +40,9 @@ public:
 
     void addOptionTick(OptionTick tick, const std::string& key);
     OptionTick getOptionTick(const std::string& key);
+
+    void setAnalyticsExportPath(const std::string& path);
+    void exportAnalyticsSnapshot(const std::string& product);
 
 	void tick();
 

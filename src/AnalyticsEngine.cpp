@@ -2,13 +2,29 @@
 #include <cmath>
 #include <optional>
 
+double RollingVar::getVar() const {
+    return variance30s_;
+}
 
-void RollingVar::onReturn(double ret) {
+
+void RollingVar::onReturn(double ret, bool snapshotReady) {
     auto now = std::chrono::system_clock::now();
-    // if (now - interval30s_ > 30000.0)
+
+    std::chrono::duration<double> t30s = now - interval30s_;
+    std::chrono::duration<double> t5m = now - interval5m_;
     double ret_sq = ret * ret;
-    variance30s_ = decay_ * variance30s_ + (1 - decay_) * ret_sq;
-    variance5m_ = decay_ * variance5m_ + (1 - decay_) * ret_sq;
+
+    if (t30s.count() > 30.0) { 
+        variance30s_ = decay_ * variance30s_ + (1 - decay_) * ret_sq;
+    } else if (snapshotReady) {
+        variance30s_ = ret_sq;
+    }
+
+    if (t5m.count() > 120.0) {
+        variance5m_ = decay_ * variance5m_ + (1 - decay_) * ret_sq;
+    } else if (snapshotReady) {
+        variance5m_ = ret_sq;
+    }
 }
 
 double RollingVar::vol30s() const {
@@ -16,7 +32,7 @@ double RollingVar::vol30s() const {
 }
 
 double RollingVar::vol5m() const {
-    return std::sqrt(variance5m_)
+    return std::sqrt(variance5m_);
 }
 
 
@@ -31,34 +47,30 @@ double AnalyticsEngine::getReturns(const SpotTick& tick){
     return logRet;
 }
 
-std::optional<InstrumentSnapshot> AnalyticsEngine::getSnap(const SpotTick& tick) {
-    /* 
-        get computations for metrics:
-            - log returns
-            - rolling vols
-            - variance (for further covariance if needed)
-
-    */
-
+std::optional<InstrumentSnapshot> AnalyticsEngine::getSnap() {
     if (!snapshotReady_) { return std::nullopt;}
 
+    return snapshot_;
 
-    double logRet = getReturns(tick);
-    varMetrics_.onReturn(logRet);
+}
 
+void AnalyticsEngine::update(const SpotTick& tick) {
 
-    InstrumentSnapshot ss{};
+    double log_ret = getReturns(tick);
+    varMetrics_.onReturn(log_ret, snapshotReady_); 
 
-    ss.lastTickTime_ = tick.timestamp;
-    ss.buyVolume_ = tick.buyAmt;
-    ss.sellVolume_ = tick.sellAmt;
-    ss.tradesLastMinute_ = tick.tradedAmt;
-    ss.spread_ = (tick.bestAsk - tick.bestBid);
-    ss.variance_ = varMetrics_.getVar();
+    snapshot_.lastTickTime_ = tick.timestamp;
+    snapshot_.buyVolume_ = tick.buyAmt;
+    snapshot_.sellVolume_ = tick.sellAmt;
+    snapshot_.tradesLastMinute_ = tick.tradedAmt;
+    snapshot_.lastPrice_ = tick.price;
+    snapshot_.mid_ = (tick.bestAsk + tick.bestBid) / 2.0;
+    snapshot_.spread_ = (tick.bestAsk - tick.bestBid);
+    snapshot_.variance_ = varMetrics_.getVar();
+    
+    snapshot_.vol30s_ = varMetrics_.vol30s();
+    snapshot_.vol5m_ = varMetrics_.vol5m();
 
-    ss.vol30s_ = varMetrics_.vol30s();
-    ss.vol5m_ = varMetrics_.vol5m();
-    ss.vwap_ = 
-
+    snapshotReady_ = true;
 }
 
