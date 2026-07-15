@@ -20,7 +20,7 @@ void RollingVar::onReturn(double ret, bool snapshotReady) {
         variance30s_ = ret_sq;
     }
 
-    if (t5m.count() > 120.0) {
+    if (t5m.count() > 300.0) {
         variance5m_ = decay_ * variance5m_ + (1 - decay_) * ret_sq;
     } else if (snapshotReady) {
         variance5m_ = ret_sq;

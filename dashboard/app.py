@@ -9,7 +9,38 @@ st.set_page_config(page_title="Crypto Market Dashboard", layout="wide")
 st.title("Crypto Market Dashboard")
 st.markdown("A lightweight view of the analytics snapshots emitted by the C++ data manager.")
 
-DATA_PATH = Path(__file__).resolve().parent / "analytics.json"
+def candidate_analytics_paths() -> list[Path]:
+    dashboard_dir = Path(__file__).resolve().parent
+    repo_root = dashboard_dir.parent
+    return [
+        dashboard_dir / "analytics.json",
+        repo_root / "build" / "dashboard" / "analytics.json",
+        Path.cwd() / "dashboard" / "analytics.json",
+        Path.cwd() / "build" / "dashboard" / "analytics.json",
+    ]
+
+
+def resolve_analytics_path() -> Path:
+    candidates = candidate_analytics_paths()
+    existing = [path for path in candidates if path.exists()]
+    if not existing:
+        return candidates[0]
+
+    def row_count(path: Path) -> int:
+        try:
+            with path.open("r", encoding="utf-8") as handle:
+                payload = json.load(handle)
+        except (OSError, json.JSONDecodeError):
+            return -1
+
+        if isinstance(payload, list):
+            return len(payload)
+        return 0
+
+    return max(existing, key=lambda path: (row_count(path), path.stat().st_mtime))
+
+
+DATA_PATH = resolve_analytics_path()
 
 st.sidebar.header("Filters")
 auto_refresh = st.sidebar.checkbox("Auto refresh", value=True)
