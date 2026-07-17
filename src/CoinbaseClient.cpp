@@ -99,6 +99,9 @@ std::optional<MarketEvent> CoinbaseClient::parsePayload(const std::string& msg) 
             event.bestAsk = std::stod(best_ask_str);
 
             return std::make_optional(MarketEvent{event});
+
+        } else if (type == "orderbook") {
+            
         } else {
             return std::nullopt;
         }

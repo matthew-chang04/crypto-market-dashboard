@@ -18,7 +18,15 @@ struct TickEvent {
     double bestBid;
 };
 
-using MarketEvent = std::variant<TickEvent>;
+struct OrderBookEvent {
+    std::chrono::system_clock::time_point timestamp;
+    std::string instrument;
+    double bestBid;
+    double bestAsk;
+    
+};
+
+using MarketEvent = std::variant<TickEvent, OrderBookEvent>;
 
 struct SpotTick {
     double price;
