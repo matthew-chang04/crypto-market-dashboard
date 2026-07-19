@@ -3,6 +3,7 @@
 #include <chrono>
 #include <string>
 #include <variant>
+#include <map>
 
 struct TickEvent {
     std::chrono::system_clock::time_point timestamp;
@@ -23,7 +24,9 @@ struct OrderBookEvent {
     std::string instrument;
     double bestBid;
     double bestAsk;
-    
+    std::unordered_map<double, double> newBids;
+    std::unordered_map<double, double> newAsks;
+
 };
 
 using MarketEvent = std::variant<TickEvent, OrderBookEvent>;
@@ -41,6 +44,11 @@ struct SpotTick {
     double bestBid;
 };
 
+struct OrderBook {
+    std::map<double, double> bids_;
+    std::map<double, double> asks_;
+
+};
 struct OptionTick {
     double price;
     double quantity;
