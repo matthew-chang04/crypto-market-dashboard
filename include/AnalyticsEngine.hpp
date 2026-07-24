@@ -4,7 +4,7 @@
 #include "DataContainers.hpp"
 
 class RollingVWAP {
-    
+
 };
 
 class RollingVar {
@@ -23,13 +23,11 @@ class RollingVar {
         double variance5m_;
 };
 
-class SpreadMetrics {
-    double getMicroprice();
-    double getSpread();
-    double getMid();
-};
 
 class OrderbookMetrics {
+    double getMid();
+    double getSpread();
+    double getMicroprice();
     double getImbalance();
 };
 
