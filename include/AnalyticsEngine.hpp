@@ -29,6 +29,7 @@ class OrderbookMetrics {
     double getSpread();
     double getMicroprice();
     double getImbalance();
+    
 };
 
 struct TradeMetrics {
