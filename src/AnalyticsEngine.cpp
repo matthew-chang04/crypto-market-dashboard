@@ -36,7 +36,7 @@ double RollingVar::vol5m() const {
 }
 
 
-AnalyticsEngine::AnalyticsEngine(const SpotTick& tick) : snapshotReady_{false}, lastTick_{tick}, varMetrics_{}, vwap_{}, snapshot_{} {
+AnalyticsEngine::AnalyticsEngine(const SpotTick& tick) : snapshotReady_{false}, lastTick_{tick}, varMetrics_{}, vwap_{}, snapshot_{}, ob_{} {
 
 }
 
@@ -74,3 +74,35 @@ void AnalyticsEngine::update(const SpotTick& tick) {
     snapshotReady_ = true;
 }
 
+void AnalyticsEngine::update(const OrderBookTick& tick) {
+
+    for (auto ask : tick.newAsks_) {
+        if (ask.second == 0.0) {
+            ob_.asks_.erase(ask.first);
+        } else {
+            ob_.asks_.insert(ask);
+        } 
+    }
+
+    for (auto bid : tick.newBids_) {
+        if (bid.second == 0.0) {
+            ob_.bids_.erase(bid.first);
+        } else {
+            ob_.bids_.insert(bid);  
+        }  
+    }    
+
+    if (!tick.newAsks_.empty() || !tick.newBids_.empty()) {
+
+        auto best_bid = ob_.bids_.begin();
+        auto best_ask = ob_.asks_.begin();
+        
+        ob_.spread_ = best_ask->first - best_bid->first;
+        ob_.depth_ = ob_.asks_.crbegin()->first - ob_.bids_.crbegin()->first;
+        ob_.imbalance_ = best_bid->second / (best_ask->second + best_bid->second);
+
+        
+
+    }
+
+}

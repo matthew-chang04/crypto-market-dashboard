@@ -21,9 +21,7 @@ struct TickEvent {
 
 struct OrderBookEvent {
     std::chrono::system_clock::time_point timestamp;
-    std::string instrument;
-    double bestBid;
-    double bestAsk;
+    std::string instrument; 
     std::unordered_map<double, double> newBids;
     std::unordered_map<double, double> newAsks;
 
@@ -41,7 +39,12 @@ struct SpotTick {
     double sellAmt;
     double tradedAmt;
     double bestAsk;
-    double bestBid;
+    double bestBid;    
+};
+
+struct OrderBookTick {
+    std::map<double, double> newBids_;
+    std::map<double, double> newAsks_;
 };
 
 struct OrderBook {
@@ -55,6 +58,7 @@ struct OrderBook {
     double vwap_;
     
 };
+
 struct OptionTick {
     double price;
     double quantity;

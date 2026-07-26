@@ -29,7 +29,7 @@ class OrderbookMetrics {
     double getSpread();
     double getMicroprice();
     double getImbalance();
-    
+
 };
 
 struct TradeMetrics {
@@ -37,6 +37,18 @@ struct TradeMetrics {
     double buyVolumne_;
     double sellVolume_;
     int tradesLastMinute_;
+};
+
+struct OrderBook {
+    std::map<double, double, std::greater<double>> bids_;
+    std::map<double, double> asks_;
+
+    double spread_;
+    double depth_;
+    double imbalance_;
+    double microprice_;
+    double vwap_;
+    
 };
 
 struct InstrumentSnapshot {
@@ -69,10 +81,13 @@ class AnalyticsEngine {
         RollingVWAP vwap_;
         double getReturns(const SpotTick& tick);
         InstrumentSnapshot snapshot_;
+        OrderBook ob_;
 
     public:
         AnalyticsEngine(const SpotTick& tick);
         std::optional<InstrumentSnapshot> getSnap();
         void update(const SpotTick& tick);
+        void update(const OrderBookTick& tick);
+        
 
 };
