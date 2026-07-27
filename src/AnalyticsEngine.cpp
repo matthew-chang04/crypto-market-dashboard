@@ -101,7 +101,8 @@ void AnalyticsEngine::update(const OrderBookTick& tick) {
         ob_.depth_ = ob_.asks_.crbegin()->first - ob_.bids_.crbegin()->first;
         ob_.imbalance_ = best_bid->second / (best_ask->second + best_bid->second);
 
-        
+        // Simple microprice for now
+        ob_.microprice_ = ((best_ask->first * best_ask->second) + (best_bid->first * best_bid->second)) / (best_bid->second + best_ask->second);
 
     }
 

@@ -47,17 +47,6 @@ struct OrderBookTick {
     std::map<double, double> newAsks_;
 };
 
-struct OrderBook {
-    std::map<double, double> bids_;
-    std::map<double, double> asks_;
-
-    double spread_;
-    double depth_;
-    double imbalance_;
-    double microprice_;
-    double vwap_;
-    
-};
 
 struct OptionTick {
     double price;
