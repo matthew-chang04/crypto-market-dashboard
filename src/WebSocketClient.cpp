@@ -223,12 +223,25 @@ void WebSocketClient::reset() {
 	start();
 }
 
-void WebSocketClient::subscribe(const std::string& symbol, const std::string& target) {
-	 if (target == "ticker") {
-		subTicker(symbol); 
-	} else {
-		std::cerr << "Unknown subscription target: " << target << std::endl;
+void WebSocketClient::subscribe(const std::string& instrument, const Channel& channel) {
+	if (!beast::get_lowest_layer(*ws_).is_open()) {
+        std::cerr << "Cannot Connect to Closed WebSocket";
+        return;
+    }
+
+	const std::string& symbol = normalizeSymbol(instrument);
+    queue_write(buildRequestMsg("subscribe", symbol, channel));
+}
+
+void WebSocketClient::unsubscribe(const std::string& instrument, const Channel& channel) {
+		if (!beast::get_lowest_layer(*ws_).is_open()) {
+		std::cerr << "Cannot Connect to Closed WebSocket";
+		return;
 	}
+
+	const std::string& symbol = normalizeSymbol(instrument);
+	queue_write(buildRequestMsg("unsubscribe", symbol, channel));
+
 }
 
 bool WebSocketClient::hasMessages() {
@@ -247,23 +260,13 @@ MarketEvent WebSocketClient::getNextMessage() {
 	return msg;
 }
 
-void WebSocketClient::subTicker(const std::string& instrument) {
-	if (!beast::get_lowest_layer(*ws_).is_open()) {
-        std::cerr << "Cannot Connect to Closed WebSocket";
-        return;
-    }
 
-	const std::string& symbol = normalizeSymbol(instrument);
-    queue_write(buildRequestMsg("subscribe", symbol));
-
-}
-
-void WebSocketClient::unsubTicker(const std::string& instrument) {
+void WebSocketClient::unsubChannel(const std::string& instrument, const Channel& channel) {
 	if (!beast::get_lowest_layer(*ws_).is_open()) {
 		std::cerr << "Cannot Connect to Closed WebSocket";
 		return;
 	}
 
 	const std::string& symbol = normalizeSymbol(instrument);
-	queue_write(buildRequestMsg("unsubscribe", symbol));
+	queue_write(buildRequestMsg("unsubscribe", symbol, channel));
 }

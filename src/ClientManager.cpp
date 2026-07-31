@@ -49,7 +49,7 @@ void ClientManager::startFeeds() {
         }
         
         std::cout << "Subscribing to asset " << asset_ << std::endl;
-		client->subscribe(asset_, "ticker"); // default to ticker for now until orderbook logic is built
+		client->subscribe(asset_, Channel::Ticker); // default to ticker for now until orderbook logic is built
 	}
 
     // optionsClient_->start();

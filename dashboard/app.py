@@ -1,4 +1,7 @@
 import json
+import threading
+import socketserver
+from collections import defaultdict
 from pathlib import Path
 
 import pandas as pd
@@ -7,7 +10,78 @@ import streamlit as st
 st.set_page_config(page_title="Crypto Market Dashboard", layout="wide")
 
 st.title("Crypto Market Dashboard")
-st.markdown("A lightweight view of the analytics snapshots emitted by the C++ data manager.")
+st.markdown("A live view of the analytics updates emitted by the C++ data manager.")
+
+LIVE_HOST = "127.0.0.1"
+LIVE_PORT = 8765
+MAX_BUFFER_SIZE = 2000
+
+live_rows = defaultdict(list)
+listener_lock = threading.Lock()
+listener_started = False
+listener_thread = None
+
+
+class AnalyticsStreamHandler(socketserver.StreamRequestHandler):
+    def handle(self):
+        while True:
+            raw_line = self.rfile.readline()
+            if not raw_line:
+                break
+            line = raw_line.decode("utf-8", errors="replace").strip()
+            if not line:
+                continue
+
+            try:
+                payload = json.loads(line)
+            except json.JSONDecodeError:
+                continue
+
+            if payload.get("type") != "analytics_update":
+                continue
+
+            entry = {
+                "product": payload.get("product"),
+                "timestamp": payload.get("timestamp"),
+                "price": payload.get("price"),
+                "buyVolume": payload.get("buyVolume"),
+                "sellVolume": payload.get("sellVolume"),
+                "tradesLastMinute": payload.get("tradesLastMinute"),
+                "mid": payload.get("mid"),
+                "spread": payload.get("spread"),
+                "variance": payload.get("variance"),
+                "vol30s": payload.get("vol30s"),
+                "vol5m": payload.get("vol5m"),
+            }
+
+            with listener_lock:
+                live_rows[entry["product"]].append(entry)
+                if len(live_rows[entry["product"]]) > MAX_BUFFER_SIZE:
+                    live_rows[entry["product"]] = live_rows[entry["product"]][-MAX_BUFFER_SIZE:]
+
+
+class AnalyticsTCPServer(socketserver.ThreadingTCPServer):
+    allow_reuse_address = True
+
+
+def ensure_live_listener():
+    global listener_started, listener_thread
+
+    if listener_started:
+        return
+
+    server = AnalyticsTCPServer((LIVE_HOST, LIVE_PORT), AnalyticsStreamHandler)
+
+    def serve_forever():
+        server.serve_forever()
+
+    listener_thread = threading.Thread(target=serve_forever, daemon=True)
+    listener_thread.start()
+    listener_started = True
+
+
+ensure_live_listener()
+
 
 def candidate_analytics_paths() -> list[Path]:
     dashboard_dir = Path(__file__).resolve().parent
@@ -48,6 +122,8 @@ auto_refresh = st.sidebar.checkbox("Auto refresh", value=True)
 if auto_refresh:
     st.sidebar.caption("Refreshing on each rerun")
 
+st.autorefresh(interval=1000, key="live_refresh")
+
 
 def load_analytics_data(path: Path) -> pd.DataFrame:
     if not path.exists():
@@ -63,7 +139,17 @@ def load_analytics_data(path: Path) -> pd.DataFrame:
     frame["timestamp"] = pd.to_datetime(frame["timestamp"], unit="ms")
     return frame
 
-analytics_df = load_analytics_data(DATA_PATH)
+
+with listener_lock:
+    live_payload = []
+    for product, entries in live_rows.items():
+        live_payload.extend(entries)
+
+if live_payload:
+    analytics_df = pd.DataFrame(live_payload)
+    analytics_df["timestamp"] = pd.to_datetime(analytics_df["timestamp"], unit="ms")
+else:
+    analytics_df = load_analytics_data(DATA_PATH)
 
 if analytics_df.empty:
     st.info("No analytics snapshots have been written yet. Start the C++ feed and the dashboard will populate automatically.")

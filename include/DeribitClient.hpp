@@ -21,13 +21,13 @@ public:
     std::string format_date(std::chrono::system_clock::time_point day);
     std::string create_symbol(const std::string& base, const std::string& expiry, double strike);
 
-    void subscribe_ticker(const std::string& symbol) override;
-    void unsubscribe_ticker(const std::string& symbol) override;
+    void subscribe_ticker(const std::string& symbol);
+    void unsubscribe_ticker(const std::string& symbol);
 
-    void subscribe_orderbook(const std::string& symbol) override;
+    void subscribe_orderbook(const std::string& symbol);
     void subscribe_tracked(double spotPrice);
     std::optional<MarketEvent> parsePayload(const std::string& msg) override;
-    std::string buildRequestMsg(const std::string& action, const std::string& product) override;
+    std::string buildRequestMsg(const std::string& action, const std::string& product, const Channel& channel) override;
 
     std::vector<std::string> trackedExpiries_;
     std::set<std::string> subscribedTickers_;

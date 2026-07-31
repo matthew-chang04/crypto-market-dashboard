@@ -24,12 +24,12 @@ class RollingVar {
 };
 
 
-class OrderbookMetrics {
-    double getMid();
-    double getSpread();
-    double getMicroprice();
-    double getImbalance();
-
+struct OrderbookMetrics {
+    double spread_;
+    double depth_;
+    double imbalance_;
+    double microprice_;
+    double vwap_;
 };
 
 struct TradeMetrics {
@@ -39,17 +39,6 @@ struct TradeMetrics {
     int tradesLastMinute_;
 };
 
-struct OrderBook {
-    std::map<double, double, std::greater<double>> bids_;
-    std::map<double, double> asks_;
-
-    double spread_;
-    double depth_;
-    double imbalance_;
-    double microprice_;
-    double vwap_;
-    
-};
 
 struct InstrumentSnapshot {
     
@@ -81,13 +70,13 @@ class AnalyticsEngine {
         RollingVWAP vwap_;
         double getReturns(const SpotTick& tick);
         InstrumentSnapshot snapshot_;
-        OrderBook ob_;
+        OrderbookMetrics obMetrics_;
 
     public:
         AnalyticsEngine(const SpotTick& tick);
         std::optional<InstrumentSnapshot> getSnap();
         void update(const SpotTick& tick);
-        void update(const OrderBookTick& tick);
+        void update(const OrderBook& ob_snap);
         
 
 };

@@ -33,6 +33,8 @@ namespace websocket = beast::websocket;
 namespace net = boost::asio;           
 using tcp = boost::asio::ip::tcp;     
 
+
+
 class WebSocketClient: public std::enable_shared_from_this<WebSocketClient>
 {
 public:
@@ -57,7 +59,9 @@ public:
 	void do_connect(tcp::resolver::results_type results);
 	void do_ssl_handshake();
 	void do_ws_handshake();
-	void subscribe(const std::string& symbol, const std::string& target);
+	void subscribe(const std::string& symbol, const Channel& channel);
+	void unsubscribe(const std::string& symbol, const Channel& channel);
+	void unsubChannel(const std::string& instrument, const Channel& channel);
 	void do_read();
 	void do_write();
 	void queue_write(const std::string& subReq);
@@ -72,15 +76,9 @@ public:
 	bool hasMessages();
 	MarketEvent getNextMessage();
 
-	void subTicker(const std::string& instrument);
-	void unsubTicker(const std::string& instrument);
-
-	virtual void subscribe_ticker(const std::string& symbol) {}
-	virtual void unsubscribe_ticker(const std::string& symbol) {}
-	virtual void subscribe_orderbook(const std::string& symbol) {}
 	virtual const std::string& normalizeSymbol(const std::string& symbol) = 0;
 	virtual std::optional<MarketEvent> parsePayload(const std::string& message) = 0;
-	virtual std::string buildRequestMsg(const std::string& action, const std::string& product) = 0;
+	virtual std::string buildRequestMsg(const std::string& action, const std::string& product, const Channel& channel) = 0;
 
 
 protected:

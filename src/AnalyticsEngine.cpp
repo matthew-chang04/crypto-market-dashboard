@@ -36,7 +36,7 @@ double RollingVar::vol5m() const {
 }
 
 
-AnalyticsEngine::AnalyticsEngine(const SpotTick& tick) : snapshotReady_{false}, lastTick_{tick}, varMetrics_{}, vwap_{}, snapshot_{}, ob_{} {
+AnalyticsEngine::AnalyticsEngine(const SpotTick& tick) : snapshotReady_{false}, lastTick_{tick}, varMetrics_{}, vwap_{}, snapshot_{} {
 
 }
 
@@ -74,36 +74,19 @@ void AnalyticsEngine::update(const SpotTick& tick) {
     snapshotReady_ = true;
 }
 
-void AnalyticsEngine::update(const OrderBookTick& tick) {
+void AnalyticsEngine::update(const OrderBook& ob_snap) {
 
-    for (auto ask : tick.newAsks_) {
-        if (ask.second == 0.0) {
-            ob_.asks_.erase(ask.first);
-        } else {
-            ob_.asks_.insert(ask);
-        } 
-    }
+    if (!ob_snap.asks_.empty() || !ob_snap.bids_.empty()) {
 
-    for (auto bid : tick.newBids_) {
-        if (bid.second == 0.0) {
-            ob_.bids_.erase(bid.first);
-        } else {
-            ob_.bids_.insert(bid);  
-        }  
-    }    
-
-    if (!tick.newAsks_.empty() || !tick.newBids_.empty()) {
-
-        auto best_bid = ob_.bids_.begin();
-        auto best_ask = ob_.asks_.begin();
+        auto best_bid = ob_snap.bids_.begin();
+        auto best_ask = ob_snap.asks_.begin();
         
-        ob_.spread_ = best_ask->first - best_bid->first;
-        ob_.depth_ = ob_.asks_.crbegin()->first - ob_.bids_.crbegin()->first;
-        ob_.imbalance_ = best_bid->second / (best_ask->second + best_bid->second);
+        obMetrics_.spread_ = best_ask->first - best_bid->first;
+        obMetrics_.depth_ = ob_snap.asks_.crbegin()->first - ob_snap.bids_.crbegin()->first;
+        obMetrics_.imbalance_ = best_bid->second / (best_ask->second + best_bid->second);
 
         // Simple microprice for now
-        ob_.microprice_ = ((best_ask->first * best_ask->second) + (best_bid->first * best_bid->second)) / (best_bid->second + best_ask->second);
-
+        obMetrics_.microprice_ = ((best_ask->first * best_ask->second) + (best_bid->first * best_bid->second)) / (best_bid->second + best_ask->second);
     }
 
 }

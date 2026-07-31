@@ -8,6 +8,9 @@
 #include <nlohmann/json.hpp>
 
 class MarketDataManager {
+    bool liveBroadcastEnabled_ = true;
+    std::string liveBroadcastHost_ = "127.0.0.1";
+    int liveBroadcastPort_ = 8765;
     
     std::unordered_map<std::string, AnalyticsEngine> analytics_;
 
@@ -20,6 +23,10 @@ class MarketDataManager {
 
     std::unordered_map<std::string, OptionTick> optionTicks_;
     std::mutex optionMutex_;
+    
+    
+    OrderBook ob_;
+    std::mutex obMutex_;
 
     std::unordered_map<std::string, std::vector<InstrumentSnapshot>> analyticsHistory_;
     std::mutex analyticsHistoryMutex_;
@@ -38,11 +45,15 @@ public:
     void addSpotTick(const std::string& product, SpotTick tick);
     SpotTick getLatestSpotTick(const std::string& key);
 
-    void addOptionTick(OptionTick tick, const std::string& key);
+    void addOptionTick(const OptionTick& tick, const std::string& key);
     OptionTick getOptionTick(const std::string& key);
+
+    void updateOrderBook(const OrderBookEvent& delta, const std::string& key);
+    const OrderBook& getOrderBook(const std::string &key);
 
     void setAnalyticsExportPath(const std::string& path);
     void exportAnalyticsSnapshot(const std::string& product);
+    void enableLiveBroadcast(const std::string& host, int port);
 
 	void tick();
 

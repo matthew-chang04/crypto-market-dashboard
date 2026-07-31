@@ -57,8 +57,6 @@ std::optional<MarketEvent> CoinbaseClient::parsePayload(const std::string& msg) 
             if (fractional_sec != std::string::npos) {
                 string_timestamp = string_timestamp.substr(0, fractional_sec);
             }
-
-            std::cout << "Timestamp string: " << string_timestamp << std::endl;
             
             std::tm tm = {};
             std::istringstream stream(string_timestamp);
@@ -100,8 +98,46 @@ std::optional<MarketEvent> CoinbaseClient::parsePayload(const std::string& msg) 
 
             return std::make_optional(MarketEvent{event});
 
-        } else if (type == "orderbook") {
-            
+        } else if (type == "l2update") {
+            OrderBookEvent event{};
+
+            event.instrument = payload["product_id"].get<std::string>();
+            auto deltas = payload["changes"].get<std::vector<std::vector<std::string>>>();
+
+            for (std::vector<std::string>& change : deltas) {
+                std::string side = change[0];
+
+                double price = stod(change[1]);
+                double quantity = stod(change[1]);
+
+                if (side == "buy") {
+                    event.newBids.insert({price, quantity});
+                } else if (side == "sell") {
+                    event.newAsks.insert({price, quantity});
+                }
+
+            }
+            return std::make_optional(MarketEvent{event});
+
+        } else if (type == "snapshot") {
+            OrderBookEvent event{};
+            event.instrument = payload["product_id"].get<std::string>();
+            auto raw_bids = payload["bids"].get<std::vector<std::vector<std::string>>>();
+            auto raw_asks = payload["asks"].get<std::vector<std::vector<std::string>>>(); 
+
+            for (std::vector<std::string>& bid : raw_bids) {
+                double price = stod(bid[0]);
+                double quantity = stod(bid[1]);
+                event.newBids.insert({price, quantity});
+            }
+
+            for (std::vector<std::string>& ask : raw_asks) {
+                double price = stod(ask[0]);
+                double quantity = stod(ask[1]);
+                event.newBids.insert({price, quantity});
+            }
+            return std::make_optional(MarketEvent{event});
+
         } else {
             return std::nullopt;
         }
@@ -111,13 +147,26 @@ std::optional<MarketEvent> CoinbaseClient::parsePayload(const std::string& msg) 
     }
 }
 
-std::string CoinbaseClient::buildRequestMsg(const std::string& action, const std::string& product) {
+std::string CoinbaseClient::buildRequestMsg(const std::string& action, const std::string& product, const Channel& channel) {
     
+    std::string channel_name;
+    switch (channel) {
+        case Channel::OrderBook:
+            channel_name = "level2_batch";
+            break;
+        case Channel::Ticker:
+            channel_name = "ticker";
+            break;
+        default:
+            return "";
+    };
+
+
     nlohmann::json j;
-    j["type"] = "subscribe";
+    j["type"] = action;
     j["channels"] = nlohmann::json::array();
     j["channels"].push_back({
-        {"name", "ticker"},
+        {"name", channel_name},
         {"product_ids", nlohmann::json::array({ product })}
     });
 

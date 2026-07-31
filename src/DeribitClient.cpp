@@ -134,7 +134,7 @@ void DeribitClient::unsubscribe_ticker(const std::string& symbol) {
 
     std::string channel = "ticker." + symbol + ".agg2";
 
-    std::string unsubReq = buildRequestMsg("unsubscribe", channel);
+    std::string unsubReq = buildRequestMsg("unsubscribe", channel, Channel::Ticker);
 
     queue_write(unsubReq);
     this->subscribedTickers_.erase(symbol);
@@ -147,7 +147,7 @@ void DeribitClient::subscribe_orderbook(const std::string& symbol) {
     }
 
     std::string channel = "book." + symbol + ".agg2";
-    std::string subReq = buildRequestMsg("subscribe", channel);
+    std::string subReq = buildRequestMsg("subscribe", channel, Channel::Ticker);
 
     queue_write(subReq);
 }
@@ -184,7 +184,8 @@ std::optional<MarketEvent> DeribitClient::parsePayload(const std::string& msg) {
     }
 }
 
-std::string DeribitClient::buildRequestMsg(const std::string& action, const std::string& product) {
+std::string DeribitClient::buildRequestMsg(const std::string& action, const std::string& product, const Channel& channel) {
+    (void)channel;
 
     nlohmann::json req;
 

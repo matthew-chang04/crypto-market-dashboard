@@ -5,6 +5,11 @@
 #include <variant>
 #include <map>
 
+enum class Channel {
+	Ticker,
+	OrderBook
+};
+
 struct TickEvent {
     std::chrono::system_clock::time_point timestamp;
     std::string instrument;
@@ -42,12 +47,6 @@ struct SpotTick {
     double bestBid;    
 };
 
-struct OrderBookTick {
-    std::map<double, double> newBids_;
-    std::map<double, double> newAsks_;
-};
-
-
 struct OptionTick {
     double price;
     double quantity;
@@ -57,4 +56,17 @@ struct OptionTick {
 	std::string expiry;
 	std::string strike;
 };
+
+struct OrderBook {
+    std::map<double, double, std::greater<double>> bids_;
+    std::map<double, double> asks_;
+
+    double spread_;
+    double depth_;
+    double imbalance_;
+    double microprice_;
+    double vwap_;
+    
+};
+
 
