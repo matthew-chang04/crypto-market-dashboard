@@ -3,7 +3,8 @@ This project displays **Cryptocurrency market data** with supplementary insights
 
 It involves:
 * [WebSocket Client Manager](#websocket-client-manager) - To get real-time financial data from different Cryptocurrency exchanges
-* [Data Manager](#data-manager) - To parse JSON information obtained from WebSockets for in-depth analysis
+* [Data Manager](#data-manager) - To parse JSON information obtained from WebSockets for in-depth analysis and manage data states (ticks and orderbooks)
+* [Analytics Engine](#analytics-engine) - Provides and stores in-depth analyses on Orderbook metrics, price movements, etc
 * Data Visualisation - Displays Coin information trade information, orderbooks, and Option insights (ie: Implied Volatility Surface).
 
 <img src="https://github.com/matthew-chang04/crypto-market-dashboard/blob/main/resources/IVSurvace" alt="Implied Volatility Heatmap" width="50%" />
@@ -18,3 +19,7 @@ The Client Manager handles establishing the connections and running IO Context t
 ## Data Manager
 
 A single data manager handles reads from websockets that are parsed into custom data structures to track the current spot price, and option spread of a given coin. The data manager feeds information into the Options Engine.
+
+## Analytics Engine
+
+The analytics engine provides single-instrument analytics on products. Standards details include 30 second vol and 5m vol (both calculated using EWMA of log returns), and orderbook metris such as spread, microprice, mid price, imbalance, etc.
