@@ -1,3 +1,4 @@
+import errno
 import json
 import threading
 import socketserver
@@ -6,6 +7,7 @@ from pathlib import Path
 
 import pandas as pd
 import streamlit as st
+from streamlit_autorefresh import st_autorefresh
 
 st.set_page_config(page_title="Crypto Market Dashboard", layout="wide")
 
@@ -70,7 +72,13 @@ def ensure_live_listener():
     if listener_started:
         return
 
-    server = AnalyticsTCPServer((LIVE_HOST, LIVE_PORT), AnalyticsStreamHandler)
+    try:
+        server = AnalyticsTCPServer((LIVE_HOST, LIVE_PORT), AnalyticsStreamHandler)
+    except OSError as exc:
+        if exc.errno in {errno.EADDRINUSE, errno.EACCES}:
+            listener_started = True
+            return
+        raise
 
     def serve_forever():
         server.serve_forever()
@@ -122,7 +130,7 @@ auto_refresh = st.sidebar.checkbox("Auto refresh", value=True)
 if auto_refresh:
     st.sidebar.caption("Refreshing on each rerun")
 
-st.autorefresh(interval=1000, key="live_refresh")
+st_autorefresh(interval=1000, key="live_refresh")
 
 
 def load_analytics_data(path: Path) -> pd.DataFrame:
